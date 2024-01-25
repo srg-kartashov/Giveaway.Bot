@@ -3,7 +3,12 @@
 using Giveaway.SteamGifts.Commands;
 using Giveaway.SteamGifts.Models;
 
+
+//using Microsoft.Extensions.Configuration;
+
 using Newtonsoft.Json;
+
+using NLog;
 
 using System.Text;
 
@@ -12,42 +17,33 @@ namespace Giveaway.SteamGifts
 
     internal class Program
     {
-        private static string configPath = "Configuration.config";
-        private static Configuration Configuration
-        {
-            get
-            {
-                if (File.Exists(configPath))
-                {
-                    var json = File.ReadAllText(configPath);
-                    var obj = JsonConvert.DeserializeObject<Configuration>(json);
-                    if (obj != null)
-                    {
-                        obj.Path = configPath;
-                        return obj;
-                    }
-                    return new Configuration(configPath);
-                }
-                else
-                {
-                    return new Configuration(configPath);
-                }
-            }
-        }
-
+        private static ILogger Logger = LogManager.GetCurrentClassLogger();
+        private const string ConfigFilePath = "Configuration.json";
 
         static void Main(string[] args)
         {
             ConfigureConsole();
-            if (IsHeadless(args))
+            bool isHeadless = IsHeadless(args);
+            try
             {
-                BaseCommand startCommand = new StartCommand(Configuration, true);
-                CommandBehavior commandBehavior = new CommandBehavior(startCommand);
-                commandBehavior.Execute();
+                Configuration Configuration = LoadConfiguration();
+                if (isHeadless)
+                {
+                    new StartCommand(Configuration, true).Execute();
+                }
+                else
+                {
+                    ShowConsoleMenu(args, Configuration);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                ShowConsoleMenu(args, Configuration);
+                Logger.Error(ex, ex.Message);
+                if (!isHeadless)
+                {
+                    Console.WriteLine("Press any key to close application...");
+                    Console.ReadLine();
+                }
             }
         }
 
@@ -72,7 +68,7 @@ namespace Giveaway.SteamGifts
 
             var telegramSettings = new ConsoleMenu(args, level: 2)
               .Add("Информация", () => new TelegramShowKeysCommand(config).Execute())
-              .Add("Изменить Telegram Bot", () => new TelegramEnterKeysCommand(config).Execute())
+              .Add("Изменить Telegram Bot", () => new TelegramEnterKeysCommand(config, ConfigFilePath).Execute())
               .Add("Проверка Telegram Bot", () => new TelegramTrySendCommand(config).Execute())
               .Add("Назад", ConsoleMenu.Close)
               .Configure(config =>
@@ -125,11 +121,15 @@ namespace Giveaway.SteamGifts
 
         public static void ConfigureConsole()
         {
-            Console.Title = "Giveaway.SteamGifts by Serhii Kartashov aka PtichiiPepel";
+            Console.Title = "Giveaway.SteamGifts";
             Console.CursorVisible = false;
             Console.SetWindowSize(125, 34);
-            Console.BufferWidth = Console.WindowWidth;
-            Console.BufferHeight = short.MaxValue / 8;
+            try
+            {
+                Console.BufferWidth = Console.WindowWidth;
+                Console.BufferHeight = short.MaxValue / 8;
+            }
+            catch { }
         }
 
         public static void WriteLogo(string title)
@@ -142,5 +142,26 @@ namespace Giveaway.SteamGifts
             headerBuilder.AppendLine();
             Console.WriteLine(headerBuilder.ToString());
         }
+
+        public static Configuration LoadConfiguration()
+        {
+            try
+            {
+                Configuration? configuration = null;
+                if (File.Exists(ConfigFilePath))
+                {
+                    string json = File.ReadAllText(ConfigFilePath);
+                    configuration = JsonConvert.DeserializeObject<Configuration>(json);
+                }
+
+                return configuration ?? throw new Exception("Ошибка во время чтения файла конфигурации");
+            }
+            catch
+            {
+                Logger.Error("Ошибка во время считывания конфигурации");
+                throw;
+            }
+        }
+
     }
 }

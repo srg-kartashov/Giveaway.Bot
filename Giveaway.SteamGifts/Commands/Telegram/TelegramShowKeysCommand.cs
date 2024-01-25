@@ -2,26 +2,33 @@
 
 using NLog;
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace Giveaway.SteamGifts.Commands
 {
     internal class TelegramShowKeysCommand : BaseCommand
     {
+        public ILogger Logger => LogManager.GetCurrentClassLogger();
+
         public TelegramShowKeysCommand(Configuration config) : base(config)
         {
         }
 
         public override void Execute()
         {
-            Console.WriteLine("Telegram BotToken: " + Configuration.Telegram.BotToken);
-            Console.WriteLine("Telegram ChatID: " + Configuration.Telegram.ChatId);
-            Console.WriteLine("Press any key to continue...");
-            Console.ReadLine();
+            try
+            {
+                Console.WriteLine("Telegram BotToken: " + Configuration.Telegram.BotToken);
+                Console.WriteLine("Telegram ChatID: " + Configuration.Telegram.ChatId);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex);
+                Console.WriteLine("Ошибка во время попытки показа ключей");
+            }
+            finally
+            {
+                Console.WriteLine("Press any key to continue...");
+                Console.ReadLine();
+            }
         }
     }
 }

@@ -1,0 +1,15 @@
+{
+  "DriverProfilePath": "UserProfile",
+  "Telegram": {
+    "BotToken": "",
+    "ChatId": "",
+    "TelegramSendWithPreview": true
+  },
+  "Filter": {
+    "TelegramSendAboutNotEnteredGames": false,
+    "NeedHide": false,
+    "MinReviewsForEnter": 0,
+    "MinRatingForEnter": 0,
+    "EnterCollection": false
+  }
+}
