@@ -3,9 +3,6 @@
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 
-using System;
-using System.Runtime.InteropServices;
-
 namespace Giveaway.SteamGifts.Pages
 {
     internal class WebNavigator : IDisposable
@@ -13,40 +10,44 @@ namespace Giveaway.SteamGifts.Pages
 
         private IWebDriver Driver { get; set; }
         private string BaseUrl { get; } = "https://www.steamgifts.com/";
+        public string UserProfilePath { get; }
         public bool Headless { get; }
 
-        public WebNavigator(bool headless = false)
+        public WebNavigator(string userProfilePath1, bool headless)
         {
+            UserProfilePath = userProfilePath1;
             Headless = headless;
-        }
-
-        public void Start()
-        {
-            ChromeOptions options = new ChromeOptions();
-            string userProfilePath = Path.Combine(Directory.GetCurrentDirectory(), "UserProfile");
-            Directory.CreateDirectory(userProfilePath);
-            options.AddArguments("user-data-dir=" + userProfilePath);
-            if (Headless)
+            try
             {
-                options.AddArgument("--headless");
-                options.AddArgument("--window-size=1920,1080");
+                ChromeOptions options = new ChromeOptions();
+                string userProfilePath = Path.Combine(Directory.GetCurrentDirectory(), UserProfilePath);
+                Directory.CreateDirectory(userProfilePath);
+                options.AddArguments("user-data-dir=" + userProfilePath);
+                if (Headless)
+                {
+                    options.AddArgument("--headless");
+                    options.AddArgument("--window-size=1920,1080");
+                }
+                var driverManager = new WebDriverManager.DriverManager();
+                var config = new WebDriverManager.DriverConfigs.Impl.ChromeConfig();
+                driverManager.SetUpDriver(config);
+
+                ChromeDriverService service = ChromeDriverService.CreateDefaultService();
+                service.HideCommandPromptWindow = true;
+                Driver = new ChromeDriver(service, options);
             }
-            var driverManager = new WebDriverManager.DriverManager();
-            var config = new WebDriverManager.DriverConfigs.Impl.ChromeConfig();
-            driverManager.SetUpDriver(config);
-          
-            ChromeDriverService service = ChromeDriverService.CreateDefaultService();
-            service.HideCommandPromptWindow = true;
-            Driver = new ChromeDriver(service, options);
-            
+            catch (Exception ex)
+            {
+                throw new Exception("Ошибка во время запуска ChromeDriver", ex);
+            }
         }
 
-        internal void GoToAutoJoinPluginPage()
+        public void GoToAutoJoinPluginPage()
         {
             Driver.Navigate().GoToUrl("https://chromewebstore.google.com/detail/autojoin-for-steamgifts/bchhlccjhoedhhegglilngpbnldfcidc?hl=ru");
         }
 
-        internal GiveawaysPage GoToGiveawaysPage(int pageNumber = 0)
+        public GiveawaysPage GoToGiveawaysPage(int pageNumber = 0)
         {
             var url = pageNumber == 0 ? BaseUrl : BaseUrl + $"{BaseUrl}giveaways/search?page={pageNumber}";
             Driver.Navigate().GoToUrl(url);
@@ -55,7 +56,7 @@ namespace Giveaway.SteamGifts.Pages
         }
 
         // TODO подумать как 
-        internal bool GoToNextGiveawaysPage(GiveawaysPage giveawaysPage)
+        public bool GoToNextGiveawaysPage(GiveawaysPage giveawaysPage)
         {
             var currentPage = giveawaysPage.GetCurrentPage();
             if (giveawaysPage.CanNavigateNextPage())

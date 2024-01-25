@@ -20,7 +20,7 @@ namespace Giveaway.SteamGifts.Commands
             catch (Exception ex)
             {
                 Logger.Error(ex);
-                Console.WriteLine("Ошибка во время попытки показа ключей");
+                Console.WriteLine("Ошибка во время показа статистики");
             }
             finally
             {

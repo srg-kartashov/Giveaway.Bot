@@ -10,7 +10,7 @@ namespace Giveaway.SteamGifts.Pages.Giveaways.Elements
     {
         public string GameName => GetTextBySelector("a.giveaway__heading__name");
         public string GameUrl => GetAttributeBySelector("a.giveaway__icon", "href");
-        public string GiveawayUrl => GetTextBySelector("a.giveaway__heading__name");
+        public string GiveawayUrl => GetAttributeBySelector("a.giveaway__heading__name", "href");
         public bool NoPoints => GetAttributeBySelector("input.btnSingle", "walkstate").Equals("no-points");
         public bool AlreadyEntered => GetAttributeBySelector("input.btnSingle", "walkstate").Equals("leave");
         public bool IsCollection => GameUrl.Contains("sub");

@@ -3,17 +3,11 @@ using Giveaway.SteamGifts.Pages;
 
 using NLog;
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace Giveaway.SteamGifts.Commands
 {
     internal class LoginCommand : BaseCommand
     {
-        private Logger Logger { get; set; } =  LogManager.GetCurrentClassLogger();
+        private Logger Logger { get; set; } = LogManager.GetCurrentClassLogger();
         public LoginCommand(Configuration configuration) : base(configuration)
         {
         }
@@ -22,9 +16,8 @@ namespace Giveaway.SteamGifts.Commands
         {
             try
             {
-                using (var webNavigator = new WebNavigator())
+                using (var webNavigator = new WebNavigator(Configuration.DriverProfilePath, false))
                 {
-                    webNavigator.Start();
                     var giveawayPage = webNavigator.GoToGiveawaysPage();
                     while (!giveawayPage.IsAuthorized())
                     {
@@ -32,15 +25,18 @@ namespace Giveaway.SteamGifts.Commands
                         Console.WriteLine("Повторная проверка через 10 секунд");
                         Thread.Sleep(10000);
                     }
-                    webNavigator.Dispose();
                     Console.WriteLine("Авторизация прошла успешно");
-                    Console.WriteLine("Press any key to continue...");
-                    Console.ReadLine();
                 }
             }
             catch (Exception ex)
             {
-
+                Logger.Error(ex);
+                Console.WriteLine("Ошибка во время авторизации");
+            }
+            finally
+            {
+                Console.WriteLine("Press any key to continue...");
+                Console.ReadLine();
             }
         }
     }

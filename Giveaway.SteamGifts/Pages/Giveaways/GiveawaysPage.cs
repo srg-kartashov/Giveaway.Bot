@@ -21,9 +21,7 @@ namespace Giveaway.SteamGifts.Pages.Giveaways
         public bool IsAuthorized()
         {
             var userName = Driver.FindElements(UserName).FirstOrDefault();
-            //var signInButton = Driver.FindElements(SignInButton).FirstOrDefault();
-            //return signInButton == null && Driver.Url.Contains("https://www.steamgifts.com/");
-            return userName != null;
+            return userName != null && Driver.Url.Contains("https://www.steamgifts.com/");
         }
 
         public bool CanNavigateNextPage()
@@ -36,15 +34,21 @@ namespace Giveaway.SteamGifts.Pages.Giveaways
         public string GetUserName()
         {
             var userName = Driver.FindElements(UserName).FirstOrDefault();
-            return userName?.Text ?? string.Empty;
+            return userName?.GetAttribute("href")?.Split("/")?.Last() ?? string.Empty;
         }
 
         public int? GetPoints()
         {
-            var points = Driver.FindElements(Points).LastOrDefault();
-            if (points != null)
-                return Convert.ToInt32(points.Text);
-            return null;
+            var points = Driver.FindElements(Points).FirstOrDefault();
+            try
+            {
+                var textPoints = points?.Text?.Split(" ")?.LastOrDefault();
+                return Convert.ToInt32(textPoints);
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         public string GetLevel()

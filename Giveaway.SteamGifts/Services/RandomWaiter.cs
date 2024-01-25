@@ -1,7 +1,12 @@
-﻿namespace Giveaway.SteamGifts.Services
+﻿using NLog;
+
+using System.Text;
+
+namespace Giveaway.SteamGifts.Services
 {
     internal class RandomWaiter
     {
+        private ILogger Logger => LogManager.GetCurrentClassLogger();
         private Random Random { get; }
         public RandomWaiter()
         {
@@ -18,7 +23,23 @@
         private void WaitMilliseconds(int from, int to)
         {
             var value = Random.Next(from, to);
+            Logger.Info(GetMessageForLogger(value));
+            TimeSpan timeSpan = TimeSpan.FromMilliseconds(value);
             Thread.Sleep(value);
+        }
+
+        private string GetMessageForLogger(int milliseconds)
+        {
+            TimeSpan timeSpan = TimeSpan.FromMilliseconds(milliseconds);
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.Append("Ожидаем ");
+            if (timeSpan.Hours != 0)
+                stringBuilder.Append($"{timeSpan.Hours} часов, ");
+            if (timeSpan.Minutes != 0)
+                stringBuilder.Append($"{timeSpan.Minutes} минут, ");
+            if (timeSpan.Seconds != 0)
+                stringBuilder.Append($"{timeSpan.Seconds} секунд");
+            return stringBuilder.ToString();
         }
     }
 }
