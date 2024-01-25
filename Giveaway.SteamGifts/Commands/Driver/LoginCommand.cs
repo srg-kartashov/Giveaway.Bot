@@ -18,7 +18,7 @@ namespace Giveaway.SteamGifts.Commands
             {
                 using (var webNavigator = new WebNavigator(Configuration.DriverProfilePath, false))
                 {
-                    var giveawayPage = webNavigator.GoToGiveawaysPage();
+                    var giveawayPage = webNavigator.GetGiveawayListPage();
                     while (!giveawayPage.IsAuthorized())
                     {
                         Console.WriteLine("Вы не авторизиваны. Войдите пожалуйста в аккаунт");

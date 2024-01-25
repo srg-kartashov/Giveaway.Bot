@@ -51,7 +51,7 @@ namespace Giveaway.SteamGifts
         {
             var driverSettings = new ConsoleMenu(args, level: 2)
                .Add("Авторизация в SteamGifts", () => new LoginCommand(config).Execute())
-               .Add("Установить AutoJoin", () => new InstallAutoJoinPluginCommand(config).Execute())
+               .Add("Обновить ChromeDriver", () => new UpdateChromeDriverCommand(config).Execute())
                .Add("Удалить профиль ChromeDriver", () => new DriverRemoveProfileCommand(config).Execute())
                .Add("Назад", ConsoleMenu.Close)
                .Configure(config =>

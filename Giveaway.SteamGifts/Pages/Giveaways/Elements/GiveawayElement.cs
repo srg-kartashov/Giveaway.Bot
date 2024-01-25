@@ -11,11 +11,24 @@ namespace Giveaway.SteamGifts.Pages.Giveaways.Elements
         public string GameName => GetTextBySelector("a.giveaway__heading__name");
         public string GameUrl => GetAttributeBySelector("a.giveaway__icon", "href");
         public string GiveawayUrl => GetAttributeBySelector("a.giveaway__heading__name", "href");
-        public bool NoPoints => GetAttributeBySelector("input.btnSingle", "walkstate").Equals("no-points");
-        public bool AlreadyEntered => GetAttributeBySelector("input.btnSingle", "walkstate").Equals("leave");
+        public bool AlreadyEntered { get { return WebElement.GetAttribute("class").Contains("is-faded"); } }
         public bool IsCollection => GameUrl.Contains("sub");
         public int ApplicationId => ParseApplicationId(GameUrl);
-        public int Points => GetTextBySelector("span.giveaway__heading__thin").ParseInteger();
+
+        public By PointsSelector = By.CssSelector("span.giveaway__heading__thin");
+        public int Points
+        {
+            get
+            {
+                var pointsElement = WebElement.FindElements(PointsSelector).FirstOrDefault(e => e.Text.Contains("P"))?.Text;
+                var points = pointsElement?.TryParseInt32() ?? -1;
+                if(points == -1)
+                {
+                    Console.WriteLine(GameName + "Проблемы с поинтами");
+                }
+                return points;
+            }
+        }
         public int Level => GetLevel();
 
         public GiveawayElement(IWebDriver webDriver, IWebElement webElement) : base(webDriver, webElement)
@@ -28,7 +41,7 @@ namespace Giveaway.SteamGifts.Pages.Giveaways.Elements
             {
                 var level = GetTextBySelector("div.giveaway__columns div.giveaway__column--contributor-level");
                 if (!string.IsNullOrEmpty(level))
-                    return level.ParseInteger();
+                    return level.TryParseInt32();
                 else return 0;
             }
             catch
@@ -40,6 +53,7 @@ namespace Giveaway.SteamGifts.Pages.Giveaways.Elements
         public void Enter() => ClickBySelector("input.btnSingle");
 
         public void Hide() => ClickBySelector("i.giveaway__hide");
+
 
         // TODO: Пересмотреть
         private int ParseApplicationId(string url)

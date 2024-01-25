@@ -3,12 +3,15 @@
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 
+using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.Web;
+
 namespace Giveaway.SteamGifts.Pages
 {
     internal class WebNavigator : IDisposable
     {
 
-        private IWebDriver Driver { get; set; }
+        public IWebDriver Driver { get; set; }
         private string BaseUrl { get; } = "https://www.steamgifts.com/";
         public string UserProfilePath { get; }
         public bool Headless { get; }
@@ -23,6 +26,8 @@ namespace Giveaway.SteamGifts.Pages
                 string userProfilePath = Path.Combine(Directory.GetCurrentDirectory(), UserProfilePath);
                 Directory.CreateDirectory(userProfilePath);
                 options.AddArguments("user-data-dir=" + userProfilePath);
+                options.AddArgument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36");
+
                 if (Headless)
                 {
                     options.AddArgument("--headless");
@@ -42,34 +47,34 @@ namespace Giveaway.SteamGifts.Pages
             }
         }
 
-        public void GoToAutoJoinPluginPage()
-        {
-            Driver.Navigate().GoToUrl("https://chromewebstore.google.com/detail/autojoin-for-steamgifts/bchhlccjhoedhhegglilngpbnldfcidc?hl=ru");
-        }
 
-        public GiveawaysPage GoToGiveawaysPage(int pageNumber = 0)
+        public GiveawayListPage GetGiveawayListPage(int pageNumber = 0)
         {
             var url = pageNumber == 0 ? BaseUrl : $"{BaseUrl}giveaways/search?page={pageNumber}";
             Driver.Navigate().GoToUrl(url);
-            GiveawaysPage giveawaysPage = new GiveawaysPage(Driver);
+            GiveawayListPage giveawaysPage = new GiveawayListPage(Driver);
             return giveawaysPage;
         }
 
-        // TODO подумать как 
-        public bool GoToNextGiveawaysPage(GiveawaysPage giveawaysPage)
+        public GiveawayListPage GetNextGiveawayListPage()
         {
-            var currentPage = giveawaysPage.GetCurrentPage();
-            if (giveawaysPage.CanNavigateNextPage())
+            var Uri = new Uri(Driver.Url);
+            var queryPage = HttpUtility.ParseQueryString(Uri.Query).Get("page");
+            if (queryPage != null)
             {
-                giveawaysPage = GoToGiveawaysPage(currentPage + 1);
-                return true;
+                var pageNumber = int.Parse(queryPage);
+                return GetGiveawayListPage(pageNumber++);
             }
-            return false;
+            return GetGiveawayListPage();
+        }
+
+        public GiveawayPage GetGiveawayPage(string giveawayUrl)
+        {
+            return new GiveawayPage(Driver, giveawayUrl);
         }
 
         public void Dispose()
         {
-            var cookies = Driver.Manage().Cookies.AllCookies;
             Driver.Quit();
         }
     }

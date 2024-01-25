@@ -1,13 +1,20 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Giveaway.SteamGifts.Extensions
 {
     internal static class StringExtension
     {
         // TODO: Пересмотреть
-        public static int ParseInteger(this string str)
+        public static int TryParseInt32(this string value)
         {
-            var result = Regex.Match(str, @"\d+").Value;
+            StringBuilder stringBuilder = new StringBuilder();
+            foreach(var ch in value)
+                if(char.IsDigit(ch))
+                    stringBuilder.Append(ch);
+            var result = stringBuilder.ToString();  
+            if(string.IsNullOrEmpty(result))
+                return -1;
             return Convert.ToInt32(result);
         }
     }
