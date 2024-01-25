@@ -49,7 +49,7 @@ namespace Giveaway.SteamGifts.Pages
 
         public GiveawaysPage GoToGiveawaysPage(int pageNumber = 0)
         {
-            var url = pageNumber == 0 ? BaseUrl : BaseUrl + $"{BaseUrl}giveaways/search?page={pageNumber}";
+            var url = pageNumber == 0 ? BaseUrl : $"{BaseUrl}giveaways/search?page={pageNumber}";
             Driver.Navigate().GoToUrl(url);
             GiveawaysPage giveawaysPage = new GiveawaysPage(Driver);
             return giveawaysPage;
@@ -69,6 +69,7 @@ namespace Giveaway.SteamGifts.Pages
 
         public void Dispose()
         {
+            var cookies = Driver.Manage().Cookies.AllCookies;
             Driver.Quit();
         }
     }

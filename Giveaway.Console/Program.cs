@@ -1,6 +1,4 @@
-﻿using ConsoleTools;
-
-using System.IO.Compression;
+﻿using Giveaway.Steam.Models;
 
 namespace Giveaway.Test
 {
@@ -8,7 +6,9 @@ namespace Giveaway.Test
     {
         static void Main(string[] args)
         {
-            
+            SteamGameInfo gameInfo = new SteamGameInfo();
+            var ss = nameof(gameInfo.Raiting);
+            ;
         }
     }
 }

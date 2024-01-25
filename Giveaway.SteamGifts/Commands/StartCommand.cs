@@ -8,6 +8,8 @@ using Giveaway.SteamGifts.Services;
 
 using NLog;
 
+using OpenQA.Selenium.DevTools.V119.Emulation;
+
 using System.Text;
 
 namespace Giveaway.SteamGifts.Commands
@@ -21,6 +23,7 @@ namespace Giveaway.SteamGifts.Commands
         private SteamClient SteamClient { get; }
         public RandomWaiter RandomWaiter { get; set; }
         public CombinedLogger CombinedLogger { get; }
+        public Statistic Statistic { get; set; }
 
         ILogger Logger { get; } = LogManager.GetCurrentClassLogger();
 
@@ -34,6 +37,8 @@ namespace Giveaway.SteamGifts.Commands
             SteamClient = new SteamClient();
             RandomWaiter = new RandomWaiter();
             CombinedLogger = new CombinedLogger(Logger, TelegramService);
+            Headless = headlessMode;
+            Statistic = new Statistic();
         }
 
 
@@ -44,6 +49,7 @@ namespace Giveaway.SteamGifts.Commands
             {
                 using (var webNavigator = new WebNavigator(Configuration.DriverProfilePath, Headless))
                 {
+                    CombinedLogger.LogInfo("Начинаем обработку");
                     GiveawaysPage giveawayPage = webNavigator.GoToGiveawaysPage();
                     RandomWaiter.WaitSeconds(10, 20);
                     if (!giveawayPage.IsAuthorized())
@@ -53,17 +59,26 @@ namespace Giveaway.SteamGifts.Commands
                     }
                     CombinedLogger.LogInfo("Имя пользователя: " + giveawayPage.GetUserName() + " Уровень: " + giveawayPage.GetLevel() + " Баланс: " + giveawayPage.GetPoints());
 
-
                     do
                     {
-                        foreach (var give in giveawayPage.GetGiveaways())
+                        Logger.Info($"Начинаем обработку страницы {giveawayPage.GetCurrentPage()}");
+                        foreach (var give in giveawayPage.GetGiveaways().OrderByDescending(e => e.Level))
                         {
                             if (give.NoPoints)
                             {
+                                var giveawayLevel = give.Level;
                                 CombinedLogger.LogInfo("Заканчиваю работу. Очки закончились.");
                                 return;
                             }
-                            ProcessGiveaway(give);
+                            try
+                            {
+                                ProcessGiveaway(give);
+                            }
+                            catch (Exception ex)
+                            {
+                                Statistic.Failed++;
+                                CombinedLogger.LogError("Ошибка во время обработки игры", ex);
+                            }
                         }
                     }
                     while (webNavigator.GoToNextGiveawaysPage(giveawayPage));
@@ -71,26 +86,71 @@ namespace Giveaway.SteamGifts.Commands
             }
             catch (Exception ex)
             {
-                CombinedLogger.LogError($"Ошибка во время выполнения {nameof(StartCommand)}", ex);
+                try
+                {
+
+                    TelegramService.SendMessage($"Ошибка во время выполнения {nameof(StartCommand)}\n ```{ex.StackTrace?.Trim()}```");
+                }
+                catch { }
+                throw;
+            }
+            finally
+            {
+                try
+                {
+                    CombinedLogger.LogInfo(Statistic.ToString());
+                }
+                catch { }
             }
         }
 
         public void ProcessGiveaway(GiveawayElement giveaway)
         {
             if (giveaway.AlreadyEntered)
+            {
+                Statistic.AlreadyEntered++;
                 return;
+            }
 
             var filtered = FilterGame(giveaway, out var gameInfo);
             Logger.Info(GetGameNLog(giveaway, gameInfo, filtered));
             if (filtered)
             {
-                giveaway.Focus();
-                RandomWaiter.WaitSeconds(5, 10);
-                giveaway.Enter();
-                RandomWaiter.WaitSeconds(10, 20);
-                var successEntered = giveaway.AlreadyEntered;
-                TelegramService.SendMessage(GetGameTelegramMessage(giveaway, gameInfo), false);
-                RandomWaiter.WaitSeconds(10, 15);
+                int tryCount = 2;
+                do
+                {
+                    giveaway.Focus();
+                    RandomWaiter.WaitSeconds(2, 5);
+                    giveaway.Enter();
+                    RandomWaiter.WaitSeconds(5, 10);
+                    var successEntered = giveaway.AlreadyEntered;
+                    if (successEntered)
+                    {
+                        Statistic.Entered++;
+                        TelegramService.SendMessage(GetGameTelegramMessage(giveaway, gameInfo), Configuration.Telegram.TelegramSendWithPreview);
+                        Logger.Info("Успешно вступили");
+                        RandomWaiter.WaitSeconds(10, 15);
+                        break;
+                    }
+                    else if (!successEntered && tryCount == 0)
+                    {
+                        Statistic.Failed++;
+                        TelegramService.SendMessage(GetGameTelegramMessage(giveaway, gameInfo), Configuration.Telegram.TelegramSendWithPreview);
+                        RandomWaiter.WaitSeconds(5, 10);
+                    }
+                    else
+                    {
+                        Logger.Info("Не удалось вступить в раздачу");
+                        Logger.Info($"Осталовь попыток {tryCount}");
+                    }
+                    tryCount--;
+                    
+                }
+                while (tryCount > 0);
+            }
+            else
+            {
+                Statistic.Skiped++;
             }
         }
 
@@ -114,7 +174,7 @@ namespace Giveaway.SteamGifts.Commands
             StringBuilder loggerMessage = new StringBuilder();
             loggerMessage.Append($"[{gameInfo.TotalReviews} - {gameInfo.Raiting}%]");
             loggerMessage.Append($"Action: ");
-            loggerMessage.Append(filterResult ? "Join; " : "Skip; ");
+            loggerMessage.Append(filterResult ? "Try Enter ; " : "Skip ; ");
             loggerMessage.Append($"Name: {giveawayElement.GameName}; ");
             if (giveawayElement.IsCollection) loggerMessage.Append(" IsCollection;");
             if (giveawayElement.AlreadyEntered) loggerMessage.Append(" AlreadyEntered;");

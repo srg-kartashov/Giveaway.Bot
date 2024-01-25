@@ -29,7 +29,7 @@ namespace Giveaway.SteamGifts
                 Configuration Configuration = LoadConfiguration();
                 if (isHeadless)
                 {
-                    new StartCommand(Configuration, true).Execute();
+                    new StartCommand(Configuration, false).Execute();
                 }
                 else
                 {

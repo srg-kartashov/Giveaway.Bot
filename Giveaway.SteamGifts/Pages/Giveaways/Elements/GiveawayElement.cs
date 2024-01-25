@@ -16,9 +16,25 @@ namespace Giveaway.SteamGifts.Pages.Giveaways.Elements
         public bool IsCollection => GameUrl.Contains("sub");
         public int ApplicationId => ParseApplicationId(GameUrl);
         public int Points => GetTextBySelector("span.giveaway__heading__thin").ParseInteger();
+        public int Level => GetLevel();
 
         public GiveawayElement(IWebDriver webDriver, IWebElement webElement) : base(webDriver, webElement)
         {
+        }
+
+        private int GetLevel()
+        {
+            try
+            {
+                var level = GetTextBySelector("div.giveaway__columns div.giveaway__column--contributor-level");
+                if (!string.IsNullOrEmpty(level))
+                    return level.ParseInteger();
+                else return 0;
+            }
+            catch
+            {
+                return 0;
+            }
         }
 
         public void Enter() => ClickBySelector("input.btnSingle");
