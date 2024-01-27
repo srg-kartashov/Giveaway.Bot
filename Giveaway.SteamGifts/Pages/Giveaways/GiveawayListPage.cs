@@ -27,6 +27,11 @@ namespace Giveaway.SteamGifts.Pages.Giveaways
             return userName != null && Driver.Url.Contains("https://www.steamgifts.com/");
         }
 
+        public void HideGiveaway(GiveawayElement giveaway)
+        {
+            giveaway.Hide();
+        }
+
         public bool CanNavigateNextPage()
         {
             var pagination = Driver.FindElements(Pagination).LastOrDefault();

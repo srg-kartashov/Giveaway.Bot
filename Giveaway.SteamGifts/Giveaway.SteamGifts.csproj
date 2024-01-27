@@ -7,6 +7,9 @@
     <Nullable>enable</Nullable>
     <ApplicationIcon>Images\icon.ico</ApplicationIcon>
     <Platforms>AnyCPU;x64</Platforms>
+    <SignAssembly>False</SignAssembly>
+    <AssemblyVersion>1.0.0.2</AssemblyVersion>
+    <FileVersion>1.0.0.2</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>

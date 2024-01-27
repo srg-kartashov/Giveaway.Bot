@@ -3,13 +3,32 @@
   "Telegram": {
     "BotToken": "",
     "ChatId": "",
-    "TelegramSendWithPreview": true
+    "Preview": true
   },
-  "Filter": {
-    "TelegramSendAboutNotEnteredGames": false,
-    "NeedHide": false,
-    "MinReviewsForEnter": 0,
-    "MinRatingForEnter": 0,
-    "EnterCollection": false
-  }
+  "StopAfterPointsEnded": false,
+  "EnterCollections": true,
+  "EnterFilters": [
+    {
+      "ReviewsFrom": 500,
+      "ReviewsTo": 999,
+      "RatingFrom": 0,
+      "RatingTo": 90
+    },
+    {
+      "ReviewsFrom": 1000,
+      "ReviewsTo": 999999999,
+      "RatingFrom": 70,
+      "RatingTo": 100
+    }
+  ],
+
+  "HideFilters": [
+    {
+      "ReviewsFrom": 0,
+      "ReviewsTo": 499,
+      "RatingFrom": 0,
+      "RatingTo": 100
+    }
+  ]
+
 }

@@ -3,9 +3,9 @@ namespace Giveaway.SteamGifts.Models
 {
     internal class FilterSettings
     {
-        public bool EnterCollection { get; set; }
-        public int MinReviewsForEnter { get; set; }
-        public int MinRatingForEnter { get; set; }
-
+        public int ReviewsFrom { get; set; }
+        public int ReviewsTo { get; set; }
+        public int RatingFrom { get; set; }
+        public int RatingTo { get; set; }
     }
 }

@@ -10,15 +10,15 @@ namespace Giveaway.SteamGifts.Services
     internal class TelegramService
     {
         public ILogger Logger => LogManager.GetCurrentClassLogger();
-        public string BotToken { get; }
-        public string ChatId { get; }
+        public string? BotToken { get; }
+        public string? ChatId { get; }
         private TelegramBotClient TelegramClient { get; }
 
-        public TelegramService(string botToken, string chatId)
+        public TelegramService(string? botToken, string? chatId)
         {
             BotToken = botToken;
             ChatId = chatId;
-            TelegramClient = new TelegramBotClient(botToken);
+            TelegramClient = new TelegramBotClient(botToken ?? string.Empty);
         }
 
         public void SendMessage(string message, bool enablePreview = false)

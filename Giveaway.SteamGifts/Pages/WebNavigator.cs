@@ -63,9 +63,12 @@ namespace Giveaway.SteamGifts.Pages
             if (queryPage != null)
             {
                 var pageNumber = int.Parse(queryPage);
-                return GetGiveawayListPage(pageNumber++);
+                return GetGiveawayListPage(pageNumber + 1);
             }
-            return GetGiveawayListPage();
+            else
+            {
+                return GetGiveawayListPage(2);
+            }
         }
 
         public GiveawayPage GetGiveawayPage(string giveawayUrl)
