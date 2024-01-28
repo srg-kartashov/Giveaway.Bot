@@ -7,11 +7,11 @@ namespace Giveaway.SteamGifts.Models
     {
         public GameGiveaway(GiveawayElement giveaway)
         {
-            Name = giveaway.GameName;
-            SteamUrl = giveaway.GameUrl;
-            SteamGiftUrl = giveaway.GiveawayUrl;
-            IsCollection = giveaway.IsCollection;
-            Points = giveaway.Points;
+            Name = giveaway.GetGameName();
+            SteamUrl = giveaway.GetSteamUrl();
+            GiveawayGiftUrl = giveaway.GetGiveawayUrl();
+            IsCollection = giveaway.IsCollection();
+            Points = giveaway.GetPoints();
         }
         public GameGiveaway(GiveawayElement giveaway, SteamGameInfo steamGameInfo) : this(giveaway)
         {
@@ -21,7 +21,7 @@ namespace Giveaway.SteamGifts.Models
 
         public string Name { get; set; } = null!;
         public string SteamUrl { get; set; } = null!;
-        public string SteamGiftUrl { get; set; } = null!;
+        public string GiveawayGiftUrl { get; set; } = null!;
         public bool IsCollection { get; set; }
         public int Raiting { get; set; }
         public int Reviews { get; set; }

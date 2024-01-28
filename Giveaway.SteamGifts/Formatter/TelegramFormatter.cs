@@ -39,7 +39,7 @@ namespace Giveaway.SteamGifts.Formatter
 
             telegramMessage.Append($" <a href =\"{game.SteamUrl}\">{game.Name}</a>");
             telegramMessage.Append($" [{game.Reviews} - {game.Raiting}%] ");
-            telegramMessage.Append($" <a href =\"{game.SteamGiftUrl}\">🌐</a>");
+            telegramMessage.Append($" <a href =\"{game.GiveawayGiftUrl}\">🌐</a>");
             return telegramMessage.ToString();
         }
 

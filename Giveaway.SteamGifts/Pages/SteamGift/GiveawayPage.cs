@@ -1,5 +1,8 @@
-﻿using OpenQA.Selenium;
+﻿using Giveaway.SteamGifts.Services;
+
+using OpenQA.Selenium;
 using OpenQA.Selenium.Interactions;
+using OpenQA.Selenium.Support.UI;
 
 namespace Giveaway.SteamGifts.Pages.SteamGift
 {
@@ -20,7 +23,7 @@ namespace Giveaway.SteamGifts.Pages.SteamGift
                 .SwitchTo()
                 .NewWindow(WindowType.Tab)
                 .Navigate()
-                .GoToUrl(Url);           
+                .GoToUrl(Url);
         }
 
         public void Enter()
@@ -54,11 +57,37 @@ namespace Giveaway.SteamGifts.Pages.SteamGift
             actions.Perform();
         }
 
+        //public bool IsConfirmHideButtonVisible()
+        //{
+
+        //}
+
         public bool IsEntered()
         {
             var enterButton = Driver.FindElements(DeleteButtonSelector).First();
             var hidden = enterButton.GetAttribute("class").Contains("is-hidden");
             return !hidden;
+        }
+
+        public bool PerformEnter()
+        {
+            Enter();
+            WebDriverWait wait = new WebDriverWait(Driver, TimeSpan.FromSeconds(10));
+            wait.Until(e => IsEntered());
+            return IsEntered();
+        }
+
+        public bool PerformHide()
+        {
+
+            if (IsHidden())
+                return true;
+            ClickHideButton();
+            WebDriverWait wait = new WebDriverWait(Driver, TimeSpan.FromSeconds(10));
+            //wait.Until(ExpectedConditions)
+            ClickConfirmButton();
+
+            return IsHidden();
         }
 
         public void Dispose()

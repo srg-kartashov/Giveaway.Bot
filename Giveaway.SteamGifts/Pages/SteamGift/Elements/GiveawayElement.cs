@@ -1,8 +1,5 @@
-﻿using Giveaway.SteamGifts.Extensions;
+﻿using OpenQA.Selenium;
 
-using OpenQA.Selenium;
-
-using System;
 using System.Text.RegularExpressions;
 
 namespace Giveaway.SteamGifts.Pages.SteamGift.Elements
@@ -13,6 +10,11 @@ namespace Giveaway.SteamGifts.Pages.SteamGift.Elements
         private By GiveawayUrlSelector => By.CssSelector("a.giveaway__heading__name");
         private By SteamUrlSelector => By.CssSelector("a.giveaway__icon");
         private By PointsSelector => By.CssSelector("span.giveaway__heading__thin");
+        private By LevelSelector => By.CssSelector("div.giveaway__columns div.giveaway__column--contributor-level");
+
+        public GiveawayElement(IWebDriver webDriver, IWebElement webElement) : base(webDriver, webElement)
+        {
+        }
 
         public string GetGameName()
         {
@@ -34,88 +36,58 @@ namespace Giveaway.SteamGifts.Pages.SteamGift.Elements
             var hasAlreadyJoined = WebElement.GetAttribute("class").Contains("is-faded");
             return hasAlreadyJoined;
         }
-
-
-        //public bool IsCollection()
-        //{
-        //    var giveawayUrl = GetGiveawayUrl();
-        //    bool isCollection = giveawayUrl.Contains("sub");
-        //    return isCollection;
-        //}
-        //public int GetPoints()
-        //{
-        //    var pointElement = WebElement.FindElements(PointsSelector).First();
-
-        //}
-
-
-
-        public string GameName => GetTextBySelector("a.giveaway__heading__name");//
-        public string GameUrl => GetAttributeBySelector("a.giveaway__icon", "href");//
-        public string GiveawayUrl => GetAttributeBySelector("a.giveaway__heading__name", "href");//
-        public bool AlreadyEntered { get { return WebElement.GetAttribute("class").Contains("is-faded"); } }//
-        public bool IsCollection => GameUrl.Contains("sub");
-        public int ApplicationId => GetApplicationIdFromUrl(GameUrl);
-
-
-        public int Points
+        public bool IsCollection()
         {
-            get
+            var giveawayUrl = GetSteamUrl();
+            bool isCollection = giveawayUrl.Contains("sub");
+            return isCollection;
+        }
+        public int GetPoints()
+        {
+            var pointElement = WebElement.FindElements(PointsSelector).First(e => e.Text.EndsWith("P)")).Text;
+            var pointText = pointElement.Trim('(', ')').TrimEnd('P');
+            var point = int.Parse(pointText);
+            return point;
+        }
+        public int GetApplicationId()
+        {
+            var steamUrl = GetSteamUrl();
+            string[] patterns = [
+                @"store.steampowered.com\/app\/(\d+)\/",
+                @"store.steampowered.com\/sub\/(\d+)\/"
+            ];
+            foreach (var pattern in patterns)
             {
-                var pointsElement = WebElement.FindElements(PointsSelector).FirstOrDefault(e => e.Text.Contains("P"))?.Text;
-                var points = pointsElement?.TryParseInt32() ?? -1;
-                if (points == -1)
+                if (Regex.IsMatch(steamUrl, pattern))
                 {
-                    Console.WriteLine(GameName + "Проблемы с поинтами");
+                    var applicationId = Regex.Match(steamUrl, pattern).Groups[1].Value;
+                    return Convert.ToInt32(applicationId);
                 }
-                return points;
             }
+            throw new FormatException("Error parsing ApplicationId. Invalid string format.");
         }
-        public int Level => GetLevel();
-
-        public GiveawayElement(IWebDriver webDriver, IWebElement webElement) : base(webDriver, webElement)
+        public int GetLevel()
         {
-        }
 
-        private int GetLevel()
-        {
-            try
+            var levelElement = WebElement.FindElements(LevelSelector).FirstOrDefault();
+            if (levelElement != null)
             {
-                var level = GetTextBySelector("div.giveaway__columns div.giveaway__column--contributor-level");
-                if (!string.IsNullOrEmpty(level))
-                    return level.TryParseInt32().GetValueOrDefault(-1);
-                else return 0;
+                var levelText = levelElement.Text;
+                Match match = Regex.Match(levelText, @"\d+");
+                if (match.Success)
+                {
+                    return int.Parse(match.Value);
+                }
+                else
+                {
+                    throw new FormatException("Error parsing Level. Invalid string format.");
+                }
             }
-            catch
+            else
             {
                 return 0;
             }
         }
-
-        // TODO: Пересмотреть
-        private int GetApplicationIdFromUrl(string url)
-        {
-            string gamePattern = @"store.steampowered.com\/app\/(\d+)\/";
-            string collectionPattern = @"store.steampowered.com\/sub\/(\d+)\/";
-            MatchCollection matches;
-            if (Regex.IsMatch(url, gamePattern))
-            {
-                matches = Regex.Matches(url, gamePattern);
-            }
-            else if (Regex.IsMatch(url, collectionPattern))
-            {
-                matches = Regex.Matches(url, collectionPattern);
-            }
-            else
-                throw new InvalidDataException();
-
-
-            var result = matches.First().Groups.Values.Last().Value;
-            return Convert.ToInt32(result);
-        }
-
-
-
-
     }
 }
+
