@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-namespace Giveaway.SteamGifts.Models
+﻿namespace Giveaway.SteamGifts.Models
 {
     internal class FilterSettings
     {

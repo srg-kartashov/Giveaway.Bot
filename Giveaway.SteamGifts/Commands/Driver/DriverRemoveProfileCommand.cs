@@ -8,6 +8,7 @@ namespace Giveaway.SteamGifts.Commands
     {
         public ILogger Logger => LogManager.GetCurrentClassLogger();
         public string DriverProfilePath { get; set; }
+
         public DriverRemoveProfileCommand(Configuration configuration) : base(configuration)
         {
             DriverProfilePath = configuration.DriverProfilePath;
@@ -15,7 +16,6 @@ namespace Giveaway.SteamGifts.Commands
 
         public override void Execute()
         {
-
             try
             {
                 if (Directory.Exists(DriverProfilePath))

@@ -7,7 +7,6 @@ namespace Giveaway.SteamGifts.Models
         public string Path { get; set; }
         private Configuration Configuration => GetConfiguration();
 
-
         public ConfigurationManager(string path)
         {
             Path = path;
@@ -25,6 +24,5 @@ namespace Giveaway.SteamGifts.Models
             var json = JsonConvert.SerializeObject(Configuration);
             File.WriteAllText(Path, json);
         }
-        
     }
 }

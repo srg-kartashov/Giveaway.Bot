@@ -3,25 +3,22 @@
 using Giveaway.SteamGifts.Commands;
 using Giveaway.SteamGifts.Models;
 
-
 //using Microsoft.Extensions.Configuration;
 
 using Newtonsoft.Json;
 
 using NLog;
-using NLog.Config;
 
 using System.Text;
 
 namespace Giveaway.SteamGifts
 {
-
     internal class Program
     {
         private static ILogger Logger = LogManager.GetCurrentClassLogger();
         private const string ConfigFilePath = "Configuration.json";
 
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             ConfigureConsole();
             bool isHeadless = IsHeadless(args);
@@ -64,8 +61,6 @@ namespace Giveaway.SteamGifts
                    config.EnableBreadcrumb = true;
                    config.WriteBreadcrumbAction = titles => WriteLogo(string.Join(" / ", titles));
                });
-
-
 
             var telegramSettings = new ConsoleMenu(args, level: 2)
               .Add("Информация", () => new TelegramShowKeysCommand(config).Execute())
@@ -163,6 +158,5 @@ namespace Giveaway.SteamGifts
                 throw;
             }
         }
-
     }
 }

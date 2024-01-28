@@ -7,6 +7,7 @@ namespace Giveaway.SteamGifts.Commands
     internal class StatisticCommand : BaseCommand
     {
         public ILogger Logger = LogManager.GetCurrentClassLogger();
+
         public StatisticCommand(Configuration configuration) : base(configuration)
         {
         }

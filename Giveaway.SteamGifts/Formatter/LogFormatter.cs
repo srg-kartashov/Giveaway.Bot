@@ -1,8 +1,5 @@
 ﻿using Giveaway.SteamGifts.Models;
-using Giveaway.SteamGifts.Pages.SteamGift;
-using Giveaway.SteamGifts.Pages.SteamGift.Elements;
 
-using System;
 using System.Text;
 
 namespace Giveaway.SteamGifts.Formatter

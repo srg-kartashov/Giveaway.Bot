@@ -1,6 +1,4 @@
-﻿using AngleSharp.Dom;
-
-using OpenQA.Selenium;
+﻿using OpenQA.Selenium;
 using OpenQA.Selenium.Interactions;
 
 namespace Giveaway.SteamGifts.Pages
@@ -26,7 +24,7 @@ namespace Giveaway.SteamGifts.Pages
         protected string GetAttributeBySelector(string selector, string attribute)
         {
             var content = WebElement.FindElements(By.CssSelector(selector)).FirstOrDefault();
- 
+
             return content?.GetAttribute(attribute) ?? string.Empty;
         }
 
@@ -54,6 +52,5 @@ namespace Giveaway.SteamGifts.Pages
             actions.ScrollToElement(WebElement);
             actions.Perform();
         }
-
     }
 }

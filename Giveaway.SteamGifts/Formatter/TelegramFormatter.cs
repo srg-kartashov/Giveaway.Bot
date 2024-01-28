@@ -10,14 +10,17 @@ namespace Giveaway.SteamGifts.Formatter
         {
             return $"✅Успешно вступили: {statistic.Entered}\n⚠️Не получилось вступить: {statistic.Failed}\n⏭️Пропустили: {statistic.Skiped}\n👁Скрыли: {statistic.Hidden}\n❗👁Не удалось скрыть: {statistic.FailedHidden}";
         }
+
         public string FormatForLog(UserData userData)
         {
             return $"👨‍💻 {userData.Name}\n📈 Уровень: {userData.Level}\n💰 Баланс: {userData.Points}";
         }
+
         public string FormatForLog(string massage, Exception exception)
         {
             return $"🛑 {massage}\n <pre>{exception.StackTrace?.Trim()}</pre>";
         }
+
         public string FormatForLog(GameGiveaway game, GiveawayAction action)
         {
             StringBuilder telegramMessage = new StringBuilder();
@@ -26,12 +29,15 @@ namespace Giveaway.SteamGifts.Formatter
                 case GiveawayAction.Failed:
                     telegramMessage.Append("⚠️");
                     break;
+
                 case GiveawayAction.Join:
                     telegramMessage.Append("✅");
                     break;
+
                 case GiveawayAction.Hide:
                     telegramMessage.Append("👁");
                     break;
+
                 case GiveawayAction.FailedHide:
                     telegramMessage.Append("❗👁");
                     break;
@@ -42,6 +48,5 @@ namespace Giveaway.SteamGifts.Formatter
             telegramMessage.Append($" <a href =\"{game.GiveawayGiftUrl}\">🌐</a>");
             return telegramMessage.ToString();
         }
-
     }
 }

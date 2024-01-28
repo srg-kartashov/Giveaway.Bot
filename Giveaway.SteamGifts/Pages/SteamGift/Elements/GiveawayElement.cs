@@ -21,27 +21,32 @@ namespace Giveaway.SteamGifts.Pages.SteamGift.Elements
             var gameName = WebElement.FindElements(GameNameSelector).First();
             return gameName.Text;
         }
+
         public string GetSteamUrl()
         {
             var steamUrl = WebElement.FindElements(SteamUrlSelector).First().GetAttribute("href");
             return steamUrl;
         }
+
         public string GetGiveawayUrl()
         {
             var giveawayUrl = WebElement.FindElements(GiveawayUrlSelector).First().GetAttribute("href");
             return giveawayUrl;
         }
+
         public bool HasAlreadyJoined()
         {
             var hasAlreadyJoined = WebElement.GetAttribute("class").Contains("is-faded");
             return hasAlreadyJoined;
         }
+
         public bool IsCollection()
         {
             var giveawayUrl = GetSteamUrl();
             bool isCollection = giveawayUrl.Contains("sub");
             return isCollection;
         }
+
         public int GetPoints()
         {
             var pointElement = WebElement.FindElements(PointsSelector).First(e => e.Text.EndsWith("P)")).Text;
@@ -49,6 +54,7 @@ namespace Giveaway.SteamGifts.Pages.SteamGift.Elements
             var point = int.Parse(pointText);
             return point;
         }
+
         public int GetApplicationId()
         {
             var steamUrl = GetSteamUrl();
@@ -66,9 +72,9 @@ namespace Giveaway.SteamGifts.Pages.SteamGift.Elements
             }
             throw new FormatException("Error parsing ApplicationId. Invalid string format.");
         }
+
         public int GetLevel()
         {
-
             var levelElement = WebElement.FindElements(LevelSelector).FirstOrDefault();
             if (levelElement != null)
             {
@@ -90,4 +96,3 @@ namespace Giveaway.SteamGifts.Pages.SteamGift.Elements
         }
     }
 }
-

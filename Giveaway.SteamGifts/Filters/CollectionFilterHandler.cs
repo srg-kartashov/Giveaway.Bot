@@ -5,6 +5,7 @@ namespace Giveaway.SteamGifts.Filters
     internal class CollectionFilterHandler : BaseFilterHandler
     {
         public bool JoinCollections { get; }
+
         public CollectionFilterHandler(bool joinCollections)
         {
             JoinCollections = joinCollections;

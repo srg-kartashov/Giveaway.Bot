@@ -8,6 +8,7 @@ namespace Giveaway.SteamGifts.Commands
     internal class LoginCommand : BaseCommand
     {
         private Logger Logger { get; set; } = LogManager.GetCurrentClassLogger();
+
         public LoginCommand(Configuration configuration) : base(configuration)
         {
         }

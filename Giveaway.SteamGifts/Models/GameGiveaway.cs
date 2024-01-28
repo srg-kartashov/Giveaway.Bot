@@ -13,6 +13,7 @@ namespace Giveaway.SteamGifts.Models
             IsCollection = giveaway.IsCollection();
             Points = giveaway.GetPoints();
         }
+
         public GameGiveaway(GiveawayElement giveaway, SteamGameInfo steamGameInfo) : this(giveaway)
         {
             Raiting = steamGameInfo.Raiting;

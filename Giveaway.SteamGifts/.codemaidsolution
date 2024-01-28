@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CodeMaidSolution xmlns="http://www.codemaid.net/CodeMaidSolution">
+	<SolutionSettings>
+		<Methods>
+			<Method Name="Dispose" SortOrder="9999" />
+			<!-- Добавьте другие методы по необходимости -->
+		</Methods>
+	</SolutionSettings>
+</CodeMaidSolution>

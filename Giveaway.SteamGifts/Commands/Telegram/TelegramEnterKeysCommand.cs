@@ -47,7 +47,6 @@ namespace Giveaway.SteamGifts.Commands
                 Console.CursorVisible = false;
                 Console.WriteLine("Press any key to continue...");
                 Console.ReadLine();
-
             }
         }
 

@@ -8,7 +8,5 @@
         public int Entered { get; set; }
         public int Hidden { get; set; }
         public int FailedHidden { get; set; }
-
-       
     }
 }

@@ -9,7 +9,6 @@ namespace Giveaway.SteamGifts.Pages
 {
     internal class PageNavigator : IDisposable
     {
-
         public IWebDriver Driver { get; set; }
         private string BaseUrl { get; } = "https://www.steamgifts.com/";
         public string UserProfilePath { get; }
@@ -45,7 +44,6 @@ namespace Giveaway.SteamGifts.Pages
                 throw new Exception("Ошибка во время запуска ChromeDriver", ex);
             }
         }
-
 
         public GiveawayListPage GetGiveawayListPage(int pageNumber = 0)
         {

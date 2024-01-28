@@ -21,7 +21,7 @@ namespace Giveaway.SteamGifts.Services
 
         public void SendMessage(string message, bool enablePreview = false)
         {
-            if (string.IsNullOrEmpty(ChatId) || string.IsNullOrEmpty(BotToken) )
+            if (string.IsNullOrEmpty(ChatId) || string.IsNullOrEmpty(BotToken))
             {
                 Logger.Warn("Не могу отправить сообщение в Telegram. Ключи отсутствуют");
             }

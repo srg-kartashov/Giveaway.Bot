@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
+
 using Giveaway.Steam.Models;
 using Giveaway.Steam.Models.DTOs;
+
 using Newtonsoft.Json;
 
 namespace Giveaway.Steam
@@ -23,7 +25,7 @@ namespace Giveaway.Steam
             try
             {
                 var response = Client.GetAsync($"{gameId}?json=1&language=all").Result;
-                if(response.IsSuccessStatusCode)
+                if (response.IsSuccessStatusCode)
                 {
                     var content = response.Content.ReadAsStringAsync().Result;
                     var result = JsonConvert.DeserializeObject<SteamGameInfoDto>(content);
@@ -40,7 +42,5 @@ namespace Giveaway.Steam
                 return null;
             }
         }
-
-
     }
 }

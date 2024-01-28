@@ -7,6 +7,7 @@ namespace Giveaway.SteamGifts.Commands
     internal class UpdateChromeDriverCommand : BaseCommand
     {
         public ILogger Logger => LogManager.GetCurrentClassLogger();
+
         public UpdateChromeDriverCommand(Configuration configuration) : base(configuration)
         {
         }

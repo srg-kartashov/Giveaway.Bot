@@ -1,6 +1,4 @@
-﻿using Giveaway.SteamGifts.Services;
-
-using OpenQA.Selenium;
+﻿using OpenQA.Selenium;
 using OpenQA.Selenium.Interactions;
 using OpenQA.Selenium.Support.UI;
 
@@ -10,11 +8,11 @@ namespace Giveaway.SteamGifts.Pages.SteamGift
     {
         public string Url { get; }
 
-        private By EnterButtonSelector => By.CssSelector("form div[data-do='entry_insert'].sidebar__entry-insert");
+        private By ConfirmHideButtonSelector => By.CssSelector("div.form__submit-button");
         private By DeleteButtonSelector => By.CssSelector("form div[data-do='entry_delete'].sidebar__entry-delete");
+        private By EnterButtonSelector => By.CssSelector("form div[data-do='entry_insert'].sidebar__entry-insert");
         private By HideButtonSelector => By.CssSelector("div.featured__heading i.featured__giveaway__hide");
         private By HidePopupSelector => By.CssSelector("body div.popup popup--hide-games");
-        private By ConfirmHideButtonSelector => By.CssSelector("div.form__submit-button");
 
         public GiveawayPage(IWebDriver driver, string url) : base(driver)
         {
@@ -26,18 +24,13 @@ namespace Giveaway.SteamGifts.Pages.SteamGift
                 .GoToUrl(Url);
         }
 
-        public void Enter()
+        public void ClickConfirmButton()
         {
-            var enterButton = Driver.FindElements(EnterButtonSelector).FirstOrDefault();
+            var hidePopup = Driver.FindElements(HidePopupSelector).FirstOrDefault();
+            var confirmHideButton = Driver.FindElements(ConfirmHideButtonSelector).FirstOrDefault();
             Actions actions = new Actions(Driver);
-            actions.Click(enterButton);
+            actions.Click(confirmHideButton);
             actions.Perform();
-        }
-
-        public bool IsHidden()
-        {
-            var hideButton = Driver.FindElements(HideButtonSelector).FirstOrDefault();
-            return hideButton == null;
         }
 
         public void ClickHideButton()
@@ -48,19 +41,18 @@ namespace Giveaway.SteamGifts.Pages.SteamGift
             actions.Perform();
         }
 
-        public void ClickConfirmButton()
+        public void Dispose()
         {
-            var hidePopup = Driver.FindElements(HidePopupSelector).FirstOrDefault();
-            var confirmHideButton = Driver.FindElements(ConfirmHideButtonSelector).FirstOrDefault();
-            Actions actions = new Actions(Driver);
-            actions.Click(confirmHideButton);
-            actions.Perform();
+            Driver.Close();
         }
 
-        //public bool IsConfirmHideButtonVisible()
-        //{
-
-        //}
+        public void Enter()
+        {
+            var enterButton = Driver.FindElements(EnterButtonSelector).FirstOrDefault();
+            Actions actions = new Actions(Driver);
+            actions.Click(enterButton);
+            actions.Perform();
+        }
 
         public bool IsEntered()
         {
@@ -69,6 +61,15 @@ namespace Giveaway.SteamGifts.Pages.SteamGift
             return !hidden;
         }
 
+        public bool IsHidden()
+        {
+            var hideButton = Driver.FindElements(HideButtonSelector).FirstOrDefault();
+            return hideButton == null;
+        }
+
+        //public bool IsConfirmHideButtonVisible()
+        //{
+        //}
         public bool PerformEnter()
         {
             Enter();
@@ -79,7 +80,6 @@ namespace Giveaway.SteamGifts.Pages.SteamGift
 
         public bool PerformHide()
         {
-
             if (IsHidden())
                 return true;
             ClickHideButton();
@@ -88,11 +88,6 @@ namespace Giveaway.SteamGifts.Pages.SteamGift
             ClickConfirmButton();
 
             return IsHidden();
-        }
-
-        public void Dispose()
-        {
-            Driver.Close();
         }
     }
 }

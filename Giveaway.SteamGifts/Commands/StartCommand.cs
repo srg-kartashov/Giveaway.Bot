@@ -12,7 +12,6 @@ using NLog;
 
 namespace Giveaway.SteamGifts.Commands
 {
-
     internal class StartCommand : BaseCommand
     {
         private TelegramService TelegramService { get; }
@@ -27,7 +26,7 @@ namespace Giveaway.SteamGifts.Commands
         public TelegramFormatter TelegramFormatter { get; set; }
         public int Points { get; set; }
 
-        ILogger Logger { get; } = LogManager.GetCurrentClassLogger();
+        private ILogger Logger { get; } = LogManager.GetCurrentClassLogger();
 
         public bool Headless { get; set; }
 
@@ -46,10 +45,8 @@ namespace Giveaway.SteamGifts.Commands
             TelegramFormatter = new TelegramFormatter();
         }
 
-
         public override void Execute()
         {
-
             try
             {
                 using (var webNavigator = new PageNavigator(Configuration.DriverProfilePath, Headless))
@@ -57,7 +54,6 @@ namespace Giveaway.SteamGifts.Commands
                     CombinedLogger.LogInfo("Начинаю работу");
                     GiveawayListPage giveListPage = webNavigator.GetGiveawayListPage();
                     RandomWaiter.WaitSeconds(10, 20);
-
 
                     Logger.Trace("Проверяем авторизацию");
                     if (!giveListPage.IsAuthorized())
@@ -141,13 +137,11 @@ namespace Giveaway.SteamGifts.Commands
                     Console.ReadLine();
                 }
                 TelegramService.SendMessage(TelegramFormatter.FormatForLog(Statistic));
-                
             }
         }
 
         public void ProcessGiveaway(GiveawayElement giveaway, PageNavigator webNavigator)
         {
-
             bool enoughtPoints = Points > giveaway.GetPoints();
             if (!enoughtPoints && Configuration.StopAfterPointsEnded)
             {
@@ -169,7 +163,7 @@ namespace Giveaway.SteamGifts.Commands
                 {
                     Statistic.Entered++;
                     Logger.Info(LogFormatter.FormatForLog(gameGiveavay, GiveawayAction.Join));
-                    TelegramService.SendMessage(TelegramFormatter.FormatForLog(gameGiveavay, GiveawayAction.Join),TelegramSettings.PreviewJoinedGiveaways);
+                    TelegramService.SendMessage(TelegramFormatter.FormatForLog(gameGiveavay, GiveawayAction.Join), TelegramSettings.PreviewJoinedGiveaways);
                 }
                 else
                 {
@@ -231,7 +225,6 @@ namespace Giveaway.SteamGifts.Commands
                 return;
             }
 
-
             Logger.Trace(LogFormatter.FormatForLog(gameGiveavay, GiveawayAction.Skip));
             Statistic.Skiped++;
         }
@@ -260,7 +253,6 @@ namespace Giveaway.SteamGifts.Commands
                     Logger.Warn($"Осталовь попыток {tryCount}");
                 }
                 tryCount--;
-
             }
             while (tryCount > 0);
             return false;

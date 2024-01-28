@@ -5,6 +5,7 @@ namespace Giveaway.SteamGifts.Filters
     internal class PriceFilterHandler : BaseFilterHandler
     {
         public int UserBalance { get; }
+
         public PriceFilterHandler(int userBalance)
         {
             UserBalance = userBalance;
