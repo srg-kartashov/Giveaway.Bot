@@ -1,5 +1,6 @@
-﻿using Giveaway.SteamGifts.Commands;
-using Giveaway.SteamGifts.Models;
+﻿using Giveaway.SteamGifts.Models;
+
+using System.Text;
 
 namespace Giveaway.SteamGifts.Formatter
 {
@@ -7,7 +8,7 @@ namespace Giveaway.SteamGifts.Formatter
     {
         public string FormatForLog(Statistic statistic)
         {
-            return $"Успешно вступили: {statistic.Entered}, Не получилось вступить: {statistic.Failed}, Забраковали по фильтрам: {statistic.Skiped}, Скрыли: {statistic.Hidden}";
+            return $"✅Успешно вступили: {statistic.Entered}\n⚠️Не получилось вступить: {statistic.Failed}\n⏭️Пропустили: {statistic.Skiped}\n👁Скрыли: {statistic.Hidden}\n❗👁Не удалось скрыть: {statistic.FailedHidden}";
         }
         public string FormatForLog(UserData userData)
         {
@@ -17,5 +18,30 @@ namespace Giveaway.SteamGifts.Formatter
         {
             return $"🛑 {massage}\n <pre>{exception.StackTrace?.Trim()}</pre>";
         }
+        public string FormatForLog(GameGiveaway game, GiveawayAction action)
+        {
+            StringBuilder telegramMessage = new StringBuilder();
+            switch (action)
+            {
+                case GiveawayAction.Failed:
+                    telegramMessage.Append("⚠️");
+                    break;
+                case GiveawayAction.Join:
+                    telegramMessage.Append("✅");
+                    break;
+                case GiveawayAction.Hide:
+                    telegramMessage.Append("👁");
+                    break;
+                case GiveawayAction.FailedHide:
+                    telegramMessage.Append("❗👁");
+                    break;
+            }
+
+            telegramMessage.Append($" <a href =\"{game.SteamUrl}\">{game.Name}</a>");
+            telegramMessage.Append($" [{game.Reviews} - {game.Raiting}%] ");
+            telegramMessage.Append($" <a href =\"{game.SteamGiftUrl}\">🌐</a>");
+            return telegramMessage.ToString();
+        }
+
     }
 }

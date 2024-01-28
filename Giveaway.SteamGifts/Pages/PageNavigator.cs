@@ -1,14 +1,13 @@
-﻿using Giveaway.SteamGifts.Pages.Giveaways;
+﻿using Giveaway.SteamGifts.Pages.SteamGift;
 
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Web;
 
 namespace Giveaway.SteamGifts.Pages
 {
-    internal class WebNavigator : IDisposable
+    internal class PageNavigator : IDisposable
     {
 
         public IWebDriver Driver { get; set; }
@@ -16,7 +15,7 @@ namespace Giveaway.SteamGifts.Pages
         public string UserProfilePath { get; }
         public bool Headless { get; }
 
-        public WebNavigator(string userProfilePath1, bool headless)
+        public PageNavigator(string userProfilePath1, bool headless)
         {
             UserProfilePath = userProfilePath1;
             Headless = headless;
@@ -74,6 +73,11 @@ namespace Giveaway.SteamGifts.Pages
         public GiveawayPage GetGiveawayPage(string giveawayUrl)
         {
             return new GiveawayPage(Driver, giveawayUrl);
+        }
+
+        public void RefrashPage()
+        {
+            Driver.Navigate().Refresh();
         }
 
         public void Dispose()

@@ -16,7 +16,7 @@ namespace Giveaway.SteamGifts.Commands
         {
             try
             {
-                using (var webNavigator = new WebNavigator(Configuration.DriverProfilePath, false))
+                using (var webNavigator = new PageNavigator(Configuration.DriverProfilePath, false))
                 {
                     var giveawayPage = webNavigator.GetGiveawayListPage();
                     while (!giveawayPage.IsAuthorized())

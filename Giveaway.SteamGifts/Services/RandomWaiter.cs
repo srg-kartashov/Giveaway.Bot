@@ -23,7 +23,7 @@ namespace Giveaway.SteamGifts.Services
         private void WaitMilliseconds(int from, int to)
         {
             var value = Random.Next(from, to);
-            Logger.Info(GetMessageForLogger(value));
+            Logger.Trace(GetMessageForLogger(value));
             TimeSpan timeSpan = TimeSpan.FromMilliseconds(value);
             Thread.Sleep(value);
         }

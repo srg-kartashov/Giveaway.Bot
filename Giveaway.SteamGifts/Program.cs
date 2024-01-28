@@ -9,6 +9,7 @@ using Giveaway.SteamGifts.Models;
 using Newtonsoft.Json;
 
 using NLog;
+using NLog.Config;
 
 using System.Text;
 

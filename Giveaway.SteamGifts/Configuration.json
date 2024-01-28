@@ -3,7 +3,8 @@
   "Telegram": {
     "BotToken": "",
     "ChatId": "",
-    "Preview": true
+    "PreviewJoinedGiveaways": true,
+    "PreviewHiddenGiveaways": false
   },
   "StopAfterPointsEnded": false,
   "EnterCollections": true,

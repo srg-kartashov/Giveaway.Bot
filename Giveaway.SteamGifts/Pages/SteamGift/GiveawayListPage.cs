@@ -1,11 +1,11 @@
 ﻿using Giveaway.SteamGifts.Extensions;
-using Giveaway.SteamGifts.Pages.Giveaways.Elements;
+using Giveaway.SteamGifts.Pages.SteamGift.Elements;
 
 using OpenQA.Selenium;
 
 using System.Web;
 
-namespace Giveaway.SteamGifts.Pages.Giveaways
+namespace Giveaway.SteamGifts.Pages.SteamGift
 {
     internal class GiveawayListPage : BasePage
     {
@@ -27,11 +27,6 @@ namespace Giveaway.SteamGifts.Pages.Giveaways
             return userName != null && Driver.Url.Contains("https://www.steamgifts.com/");
         }
 
-        public void HideGiveaway(GiveawayElement giveaway)
-        {
-            giveaway.Hide();
-        }
-
         public bool CanNavigateNextPage()
         {
             var pagination = Driver.FindElements(Pagination).LastOrDefault();
@@ -45,7 +40,7 @@ namespace Giveaway.SteamGifts.Pages.Giveaways
             return userName?.GetAttribute("href")?.Split("/")?.Last() ?? string.Empty;
         }
 
-        public int? GetPoints()
+        public int GetPoints()
         {
             var points = Driver.FindElements(Points).FirstOrDefault();
             try
@@ -59,10 +54,10 @@ namespace Giveaway.SteamGifts.Pages.Giveaways
             }
         }
 
-        public string GetLevel()
+        public int GetLevel()
         {
             var level = Driver.FindElements(Level).LastOrDefault();
-            return level?.Text?.TryParseInt32().ToString() ?? string.Empty;
+            return level?.Text?.TryParseInt32() ?? -1;
         }
 
         public int GetCurrentPage()

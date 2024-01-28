@@ -19,6 +19,8 @@ namespace Giveaway.SteamGifts.Services
             TelegramService.SendMessage("ℹ " + message);
         }
 
+
+
         public void LogError(string message, Exception ex)
         {
             Logger.Error(ex, message);

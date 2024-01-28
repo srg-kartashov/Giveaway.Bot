@@ -1,15 +1,14 @@
 ﻿using Giveaway.Steam;
 using Giveaway.Steam.Models;
+using Giveaway.SteamGifts.Filters;
 using Giveaway.SteamGifts.Formatter;
 using Giveaway.SteamGifts.Models;
 using Giveaway.SteamGifts.Pages;
-using Giveaway.SteamGifts.Pages.Giveaways;
-using Giveaway.SteamGifts.Pages.Giveaways.Elements;
+using Giveaway.SteamGifts.Pages.SteamGift;
+using Giveaway.SteamGifts.Pages.SteamGift.Elements;
 using Giveaway.SteamGifts.Services;
 
 using NLog;
-
-using System.Text;
 
 namespace Giveaway.SteamGifts.Commands
 {
@@ -43,6 +42,8 @@ namespace Giveaway.SteamGifts.Commands
             CombinedLogger = new CombinedLogger(Logger, TelegramService);
             Headless = headlessMode;
             Statistic = new Statistic();
+            LogFormatter = new LogFormatter();
+            TelegramFormatter = new TelegramFormatter();
         }
 
 
@@ -51,39 +52,37 @@ namespace Giveaway.SteamGifts.Commands
 
             try
             {
-                using (var webNavigator = new WebNavigator(Configuration.DriverProfilePath, Headless))
+                using (var webNavigator = new PageNavigator(Configuration.DriverProfilePath, Headless))
                 {
                     CombinedLogger.LogInfo("Начинаю работу");
-                    GiveawayListPage giveawayPage = webNavigator.GetGiveawayListPage();
+                    GiveawayListPage giveListPage = webNavigator.GetGiveawayListPage();
                     RandomWaiter.WaitSeconds(10, 20);
 
 
                     Logger.Trace("Проверяем авторизацию");
-                    if (!giveawayPage.IsAuthorized())
+                    if (!giveListPage.IsAuthorized())
                     {
                         CombinedLogger.LogWarning("Вы не авторизиваны. Авторизируйтесь вручную для корректной работы приложения");
                         return;
                     }
-                    Logger.Info("Имя пользователя: " + giveawayPage.GetUserName() + " Уровень: " + giveawayPage.GetLevel() + " Баланс: " + giveawayPage.GetPoints());
-                    TelegramService.SendMessage($"👨‍💻 {giveawayPage.GetUserName()}\n📈 Уровень: {giveawayPage.GetLevel()}\n💰 Баланс: {giveawayPage.GetPoints()}");
-                    Points = giveawayPage.GetPoints().GetValueOrDefault(0);
+                    var userData = new UserData(giveListPage.GetUserName(), giveListPage.GetLevel(), giveListPage.GetPoints());
+                    Logger.Info(LogFormatter.FormatForLog(userData));
+                    TelegramService.SendMessage(TelegramFormatter.FormatForLog(userData));
+                    Points = userData.Points;
 
-                    bool firstPage = true;
-
+                    HashSet<string> processedGiveaways = new HashSet<string>();
                     do
                     {
-                        //int hiddenPerPage = Statistic.Hidden;
-                        if (!firstPage)
-                        {
-                            giveawayPage = webNavigator.GetNextGiveawayListPage();
-                        }
-                        firstPage = false;
-                        Logger.Info($"Начинаем обработку страницы {giveawayPage.GetCurrentPage()}");
+                        Logger.Trace($"Начинаем обработку страницы {giveListPage.GetCurrentPage()}");
                         RandomWaiter.WaitSeconds(5, 10);
 
-
-                        foreach (var giveaway in giveawayPage.GetGiveaways().OrderByDescending(e => e.Level))
+                        int hiddenCount = Statistic.Hidden;
+                        var giveawaysList = giveListPage.GetGiveaways().Where(e => !processedGiveaways.Contains(e.GiveawayUrl)).OrderByDescending(e => e.Level);
+                        int count = giveawaysList.Count();
+                        int index = 1;
+                        foreach (var giveaway in giveawaysList)
                         {
+                            Console.WriteLine($"{index++}/{count}");
                             if (giveaway.AlreadyEntered) continue;
 
                             if (Points < giveaway.Points && Configuration.StopAfterPointsEnded)
@@ -94,6 +93,7 @@ namespace Giveaway.SteamGifts.Commands
                             try
                             {
                                 ProcessGiveaway(giveaway, webNavigator);
+                                processedGiveaways.Add(giveaway.GiveawayUrl);
                             }
                             catch (Exception ex)
                             {
@@ -101,9 +101,26 @@ namespace Giveaway.SteamGifts.Commands
                                 CombinedLogger.LogError("Ошибка во время обработки игры", ex);
                             }
                         }
-
+                        if (hiddenCount < Statistic.Hidden)
+                        {
+                            Console.WriteLine("Refrash per page " + (Statistic.Hidden - hiddenCount));
+                            Console.WriteLine("Again");
+                            hiddenCount = Statistic.Hidden;
+                            webNavigator.RefrashPage();
+                            continue;
+                        }
+                        else
+                        {
+                            if (giveListPage.CanNavigateNextPage())
+                            {
+                                giveListPage = webNavigator.GetNextGiveawayListPage();
+                                continue;
+                            }
+                            else
+                                return;
+                        }
                     }
-                    while (giveawayPage.CanNavigateNextPage());
+                    while (true);
                 }
             }
             catch (Exception ex)
@@ -118,91 +135,108 @@ namespace Giveaway.SteamGifts.Commands
             finally
             {
                 Logger.Info(LogFormatter.FormatForLog(Statistic));
+                if (!Headless)
+                {
+                    Console.WriteLine("Press any key to continue...");
+                    Console.ReadLine();
+                }
                 TelegramService.SendMessage(TelegramFormatter.FormatForLog(Statistic));
+                
             }
         }
 
-        public void ProcessGiveaway(GiveawayElement giveaway, WebNavigator webNavigator)
+        public void ProcessGiveaway(GiveawayElement giveaway, PageNavigator webNavigator)
         {
+
             bool enoughtPoints = Points > giveaway.Points;
-
-
-            if (giveaway.IsCollection)
+            if (!enoughtPoints && Configuration.StopAfterPointsEnded)
             {
-                if (Configuration.EnterCollections)
+                return;
+            }
+
+            var gameStatistic = giveaway.IsCollection ? new SteamGameInfo() : SteamClient.GetGameInfo(giveaway.ApplicationId);
+            var gameGiveavay = new GameGiveaway(giveaway, gameStatistic);
+
+            BaseFilterHandler[] collectionFilters =
+                [
+                    new CollectionFilterHandler(Configuration.EnterCollections),
+                    new PriceFilterHandler(Points)
+                ];
+            if (collectionFilters.All(e => e.Filter(gameGiveavay)))
+            {
+                Logger.Trace(LogFormatter.FormatForLog(gameGiveavay, GiveawayAction.TryJoin));
+                if (EnterGiveawayProcess(giveaway, webNavigator))
                 {
-                    if (enoughtPoints)
-                    {
-                        Logger.Info(GetGameNLog(giveaway, new SteamGameInfo(), "Try Enter Collection; "));
-                        EnterGiveawayProcess(giveaway, webNavigator, new SteamGameInfo());
-                    }
-                    else
-                    {
-                        Logger.Info(GetGameNLog(giveaway, new SteamGameInfo(), "No Points; "));
-                    }
+                    Statistic.Entered++;
+                    Logger.Info(LogFormatter.FormatForLog(gameGiveavay, GiveawayAction.Join));
+                    TelegramService.SendMessage(TelegramFormatter.FormatForLog(gameGiveavay, GiveawayAction.Join));
                 }
                 else
                 {
-                    Logger.Info(GetGameNLog(giveaway, new SteamGameInfo(), "Skip Collection; "));
-                    Statistic.Skiped++;
+                    Statistic.Failed++;
+                    Logger.Warn(LogFormatter.FormatForLog(gameGiveavay, GiveawayAction.Failed));
+                    TelegramService.SendMessage(TelegramFormatter.FormatForLog(gameGiveavay, GiveawayAction.Failed));
                 }
+                RandomWaiter.WaitSeconds(3, 5);
                 return;
             }
 
-
-            var gameData = SteamClient.GetGameInfo(giveaway.ApplicationId);
-
-            if (gameData == null)
+            BaseFilterHandler[] joinFilters =
+               [
+                   new NonCollectionFilterHandler(),
+                   new PriceFilterHandler(Points),
+                   new RatingReviewFilterHandler(EnterFilters),
+               ];
+            if (joinFilters.All(e => e.Filter(gameGiveavay)))
             {
-                CombinedLogger.LogWarning($"Не получили SteamInfo к игре {giveaway.ApplicationId}");
-                Statistic.Failed++;
+                Logger.Trace(LogFormatter.FormatForLog(gameGiveavay, GiveawayAction.TryJoin));
+
+                if (EnterGiveawayProcess(giveaway, webNavigator))
+                {
+                    Statistic.Entered++;
+                    Logger.Info(LogFormatter.FormatForLog(gameGiveavay, GiveawayAction.Join));
+                    TelegramService.SendMessage(TelegramFormatter.FormatForLog(gameGiveavay, GiveawayAction.Join));
+                }
+                else
+                {
+                    Statistic.Failed++;
+                    Logger.Warn(LogFormatter.FormatForLog(gameGiveavay, GiveawayAction.Failed));
+                    TelegramService.SendMessage(TelegramFormatter.FormatForLog(gameGiveavay, GiveawayAction.Failed));
+                }
+                RandomWaiter.WaitSeconds(3, 5);
                 return;
             }
 
-            if (FilterGame(giveaway, EnterFilters, gameData) && enoughtPoints)
+            BaseFilterHandler[] hideFilters =
+              [
+                  new RatingReviewFilterHandler(HideFilters),
+                  new NonCollectionFilterHandler()
+              ];
+            if (hideFilters.All(e => e.Filter(gameGiveavay)))
             {
-                Logger.Info(GetGameNLog(giveaway, gameData, "Try Enter; "));
-                if (EnterGiveawayProcess(giveaway, webNavigator, gameData))
-                    RandomWaiter.WaitSeconds(5, 15);
-                return;
-            }
-
-            if (FilterGame(giveaway, HideFilters, gameData))
-            {
-                Logger.Info(GetGameNLog(giveaway, gameData, "Try Hide; "));
+                Logger.Trace(LogFormatter.FormatForLog(gameGiveavay, GiveawayAction.TryHide));
                 if (OpenPageHideGiveaway(giveaway, webNavigator))
                 {
-                    TelegramService.SendMessage(GetGameTelegramMessage(giveaway, gameData, GameResult.Hidden), Configuration.Telegram.Preview);
                     Statistic.Hidden++;
+                    Logger.Info(LogFormatter.FormatForLog(gameGiveavay, GiveawayAction.Hide));
+                    TelegramService.SendMessage(TelegramFormatter.FormatForLog(gameGiveavay, GiveawayAction.Hide));
                 }
                 else
                 {
-                    Logger.Warn(GetGameNLog(giveaway, gameData, "Failed Hide"));
+                    Statistic.FailedHidden++;
+                    Logger.Warn(LogFormatter.FormatForLog(gameGiveavay, GiveawayAction.FailedHide));
+                    TelegramService.SendMessage(TelegramFormatter.FormatForLog(gameGiveavay, GiveawayAction.FailedHide));
                 }
-                RandomWaiter.WaitSeconds(5, 10);
-                return;
-            }
-
-            if (giveaway.IsCollection && !Configuration.EnterCollections)
-            {
-                Logger.Info(GetGameNLog(giveaway, gameData, "Skip Collection; "));
-                Statistic.Skiped++;
-                return;
-            }
-
-            if (!enoughtPoints)
-            {
-                Logger.Info(GetGameNLog(giveaway, gameData, "No Points; "));
-                Statistic.Skiped++;
+                RandomWaiter.WaitSeconds(3, 5);
                 return;
             }
 
 
-
-
+            Logger.Trace(LogFormatter.FormatForLog(gameGiveavay, GiveawayAction.Skip));
+            Statistic.Skiped++;
         }
 
-        public bool EnterGiveawayProcess(GiveawayElement giveaway, WebNavigator webNavigator, SteamGameInfo gameInfo)
+        public bool EnterGiveawayProcess(GiveawayElement giveaway, PageNavigator webNavigator)
         {
             int tryCount = 2;
             do
@@ -213,24 +247,17 @@ namespace Giveaway.SteamGifts.Commands
                 {
                     Points -= giveaway.Points;
                     Statistic.Entered++;
-                    Logger.Info(GetGameNLog(giveaway, gameInfo, "Success"));
-                    TelegramService.SendMessage(GetGameTelegramMessage(giveaway, gameInfo, GameResult.Entered), Configuration.Telegram.Preview);
-                    Logger.Info("Успешно вступили");
-                    RandomWaiter.WaitSeconds(10, 15);
                     return true;
                 }
                 else if (!success && tryCount == 0)
                 {
                     Statistic.Failed++;
-                    Logger.Info(GetGameNLog(giveaway, gameInfo, "Failed"));
-                    TelegramService.SendMessage(GetGameTelegramMessage(giveaway, gameInfo, GameResult.Failed), Configuration.Telegram.Preview);
                     RandomWaiter.WaitSeconds(5, 10);
                 }
                 else
                 {
-                    Logger.Info(GetGameNLog(giveaway, gameInfo, "Try Again"));
-                    Logger.Info("Не удалось вступить в раздачу");
-                    Logger.Info($"Осталовь попыток {tryCount}");
+                    Logger.Warn("Не удалось вступить в раздачу");
+                    Logger.Warn($"Осталовь попыток {tryCount}");
                 }
                 tryCount--;
 
@@ -239,7 +266,7 @@ namespace Giveaway.SteamGifts.Commands
             return false;
         }
 
-        public bool OpenPageEnterGiveaway(GiveawayElement giveaway, WebNavigator webNavigator)
+        public bool OpenPageEnterGiveaway(GiveawayElement giveaway, PageNavigator webNavigator)
         {
             bool result = false;
             giveaway.Focus();
@@ -261,7 +288,7 @@ namespace Giveaway.SteamGifts.Commands
             return result;
         }
 
-        public bool OpenPageHideGiveaway(GiveawayElement giveaway, WebNavigator webNavigator)
+        public bool OpenPageHideGiveaway(GiveawayElement giveaway, PageNavigator webNavigator)
         {
             bool result = false;
             giveaway.Focus();
@@ -285,54 +312,6 @@ namespace Giveaway.SteamGifts.Commands
                 webNavigator.Driver.SwitchTo().Window(currentWindowName);
             }
             return result;
-        }
-        private bool FilterGame(GiveawayElement giveawayElement, FilterSettings[] filterSettings, SteamGameInfo gameData)
-        {
-            foreach (var filterSetting in filterSettings)
-            {
-                if (gameData.Raiting >= filterSetting.RatingFrom &&
-                    gameData.Raiting <= filterSetting.RatingTo &&
-                    gameData.TotalReviews >= filterSetting.ReviewsFrom &&
-                    gameData.TotalReviews <= filterSetting.ReviewsTo)
-                    return true;
-            }
-            return false;
-        }
-
-        private string GetGameNLog(GiveawayElement giveawayElement, SteamGameInfo gameInfo, string action)
-        {
-            StringBuilder loggerMessage = new StringBuilder();
-            loggerMessage.Append($"[{gameInfo.TotalReviews} - {gameInfo.Raiting}%]");
-            loggerMessage.Append($"Name: {giveawayElement.GameName}; ");
-            loggerMessage.Append($"Points: {giveawayElement.Points}; ");
-            loggerMessage.Append($"Action: ");
-            loggerMessage.Append(action);
-            if (giveawayElement.IsCollection) loggerMessage.Append(" IsCollection;");
-            return loggerMessage.ToString();
-        }
-
-        enum GameResult { Entered, Failed, Hidden }
-        private string GetGameTelegramMessage(GiveawayElement giveawayElement, SteamGameInfo gameInfo, GameResult gameResult)
-        {
-
-            StringBuilder telegramMessage = new StringBuilder();
-            switch (gameResult)
-            {
-                case GameResult.Failed:
-                    telegramMessage.Append("⚠️");
-                    break;
-                case GameResult.Entered:
-                    telegramMessage.Append("✅");
-                    break;
-                case GameResult.Hidden:
-                    telegramMessage.Append("👁");
-                    break;
-            }
-
-            telegramMessage.Append($" <a href =\"{giveawayElement.GameUrl}\">{giveawayElement.GameName}</a>");
-            telegramMessage.Append($" [{gameInfo.TotalReviews} - {gameInfo.Raiting}%] ");
-            telegramMessage.Append($" <a href =\"{giveawayElement.GiveawayUrl}\">🌐</a>");
-            return telegramMessage.ToString();
         }
     }
 }

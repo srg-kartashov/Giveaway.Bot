@@ -1,7 +1,5 @@
 ﻿using Giveaway.SteamGifts.Models;
 
-using Telegram.Bot.Types;
-
 namespace Giveaway.SteamGifts.Filters
 {
     internal class CollectionFilterHandler : BaseFilterHandler

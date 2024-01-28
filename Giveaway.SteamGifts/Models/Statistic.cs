@@ -7,10 +7,8 @@
         public int Failed { get; set; }
         public int Entered { get; set; }
         public int Hidden { get; set; }
+        public int FailedHidden { get; set; }
 
-        public override string ToString()
-        {
-            return $"Успешно вступили: {Entered}, Не получилось вступить: {Failed}, Забраковали по фильтрам: {Skiped}, Скрыли: {Hidden}";
-        }
+       
     }
 }

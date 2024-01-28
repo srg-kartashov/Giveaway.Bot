@@ -2,10 +2,10 @@
 
 namespace Giveaway.SteamGifts.Filters
 {
-    internal class RatingReviewFilter : BaseFilterHandler
+    internal class RatingReviewFilterHandler : BaseFilterHandler
     {
         public FilterSettings[] FilterSettings { get; }
-        public RatingReviewFilter(FilterSettings[] filterSettings)
+        public RatingReviewFilterHandler(FilterSettings[] filterSettings)
         {
             FilterSettings = filterSettings;
         }

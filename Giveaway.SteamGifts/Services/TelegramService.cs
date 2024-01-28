@@ -1,6 +1,4 @@
-﻿using Giveaway.SteamGifts.Models;
-
-using NLog;
+﻿using NLog;
 
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
@@ -10,14 +8,14 @@ namespace Giveaway.SteamGifts.Services
     internal class TelegramService
     {
         public ILogger Logger => LogManager.GetCurrentClassLogger();
-        public string? BotToken { get; }
-        public string? ChatId { get; }
+        public string BotToken { get; }
+        public string ChatId { get; }
         private TelegramBotClient TelegramClient { get; }
 
         public TelegramService(string? botToken, string? chatId)
         {
-            BotToken = botToken;
-            ChatId = chatId;
+            BotToken = botToken ?? string.Empty;
+            ChatId = chatId ?? string.Empty;
             TelegramClient = new TelegramBotClient(botToken ?? string.Empty);
         }
 
@@ -25,7 +23,7 @@ namespace Giveaway.SteamGifts.Services
         {
             if (string.IsNullOrEmpty(ChatId) || string.IsNullOrEmpty(BotToken) )
             {
-                Logger.Warn("Telegram ключи отсутствуют");
+                Logger.Warn("Не могу отправить сообщение в Telegram. Ключи отсутствуют");
             }
             try
             {
