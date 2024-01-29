@@ -10,25 +10,25 @@ using Giveaway.SteamGifts.Services;
 
 using NLog;
 
+using OpenQA.Selenium;
+
 namespace Giveaway.SteamGifts.Commands
 {
     internal class StartCommand : BaseCommand
     {
+        public CombinedLogger CombinedLogger { get; }
+        public bool Headless { get; set; }
+        public LogFormatter LogFormatter { get; set; }
+        public int Points { get; set; }
+        public RandomWaiter RandomWaiter { get; set; }
+        public Statistic Statistic { get; set; }
+        public TelegramFormatter TelegramFormatter { get; set; }
+        private FilterSettings[] EnterFilters { get; }
+        private FilterSettings[] HideFilters { get; }
+        private ILogger Logger { get; } = LogManager.GetCurrentClassLogger();
+        private SteamClient SteamClient { get; }
         private TelegramService TelegramService { get; }
         private TelegramSettings TelegramSettings { get; }
-        private FilterSettings[] HideFilters { get; }
-        private FilterSettings[] EnterFilters { get; }
-        private SteamClient SteamClient { get; }
-        public RandomWaiter RandomWaiter { get; set; }
-        public CombinedLogger CombinedLogger { get; }
-        public Statistic Statistic { get; set; }
-        public LogFormatter LogFormatter { get; set; }
-        public TelegramFormatter TelegramFormatter { get; set; }
-        public int Points { get; set; }
-
-        private ILogger Logger { get; } = LogManager.GetCurrentClassLogger();
-
-        public bool Headless { get; set; }
 
         public StartCommand(Configuration configuration, bool headlessMode = false) : base(configuration)
         {
@@ -47,77 +47,81 @@ namespace Giveaway.SteamGifts.Commands
 
         public override void Execute()
         {
+            IWebDriver webDriver = null!;
             try
             {
-                using (var webNavigator = new PageNavigator(Configuration.DriverProfilePath, Headless))
+                webDriver = new SeleniumDriverBuilder()
+                   .SetUserDataPath(Configuration.DriverProfilePath)
+                   .SetHeadless(Headless)
+                   .Build();
+
+                CombinedLogger.LogInfo("Начинаю работу");
+                SteamGiftPage steamGiftPage = new SteamGiftPage(webDriver);
+                steamGiftPage.GoToPage(1);
+                RandomWaiter.WaitSeconds(10, 20);
+
+                Logger.Trace("Проверяем авторизацию");
+                if (!steamGiftPage.IsAuthorized())
                 {
-                    CombinedLogger.LogInfo("Начинаю работу");
-                    GiveawayListPage giveListPage = webNavigator.GetGiveawayListPage();
-                    RandomWaiter.WaitSeconds(10, 20);
+                    CombinedLogger.LogWarning("Вы не авторизиваны. Авторизируйтесь вручную для корректной работы приложения");
+                    return;
+                }
+                var userData = new UserData(steamGiftPage.GetUserName(), steamGiftPage.GetLevel(), steamGiftPage.GetPoints());
+                Logger.Info(LogFormatter.FormatForLog(userData));
+                TelegramService.SendMessage(TelegramFormatter.FormatForLog(userData));
+                Points = userData.Points;
 
-                    Logger.Trace("Проверяем авторизацию");
-                    if (!giveListPage.IsAuthorized())
+                HashSet<string> processedGiveaways = new HashSet<string>();
+                do
+                {
+                    Logger.Trace($"Начинаем обработку страницы {steamGiftPage.GetCurrentPage()}");
+                    RandomWaiter.WaitSeconds(5, 10);
+
+                    int hiddenCount = Statistic.Hidden;
+                    var giveawaysList = steamGiftPage.GetGiveaways().Where(e => !processedGiveaways.Contains(e.GetGiveawayUrl())).OrderByDescending(e => e.GetLevel());
+                    int count = giveawaysList.Count();
+                    int index = 1;
+                    foreach (var giveaway in giveawaysList)
                     {
-                        CombinedLogger.LogWarning("Вы не авторизиваны. Авторизируйтесь вручную для корректной работы приложения");
-                        return;
-                    }
-                    var userData = new UserData(giveListPage.GetUserName(), giveListPage.GetLevel(), giveListPage.GetPoints());
-                    Logger.Info(LogFormatter.FormatForLog(userData));
-                    TelegramService.SendMessage(TelegramFormatter.FormatForLog(userData));
-                    Points = userData.Points;
+                        Console.WriteLine($"[{index++}/{count}]");
+                        if (giveaway.HasAlreadyJoined()) continue;
 
-                    HashSet<string> processedGiveaways = new HashSet<string>();
-                    do
-                    {
-                        Logger.Trace($"Начинаем обработку страницы {giveListPage.GetCurrentPage()}");
-                        RandomWaiter.WaitSeconds(5, 10);
-
-                        int hiddenCount = Statistic.Hidden;
-                        var giveawaysList = giveListPage.GetGiveaways().Where(e => !processedGiveaways.Contains(e.GetGiveawayUrl())).OrderByDescending(e => e.GetLevel());
-                        int count = giveawaysList.Count();
-                        int index = 1;
-                        foreach (var giveaway in giveawaysList)
+                        if (Points < giveaway.GetPoints() && Configuration.StopAfterPointsEnded)
                         {
-                            Console.WriteLine($"[{index++}/{count}]");
-                            if (giveaway.HasAlreadyJoined()) continue;
-
-                            if (Points < giveaway.GetPoints() && Configuration.StopAfterPointsEnded)
-                            {
-                                CombinedLogger.LogInfo("Заканчиваю работу. Очки закончились.");
-                                return;
-                            }
-                            try
-                            {
-                                ProcessGiveaway(giveaway, webNavigator);
-                                processedGiveaways.Add(giveaway.GetGiveawayUrl());
-                            }
-                            catch (Exception ex)
-                            {
-                                Statistic.Failed++;
-                                CombinedLogger.LogError("Ошибка во время обработки игры", ex);
-                            }
+                            CombinedLogger.LogInfo("Заканчиваю работу. Очки закончились.");
+                            return;
                         }
-                        if (hiddenCount < Statistic.Hidden)
+                        try
                         {
-                            Console.WriteLine("Refrash per page " + (Statistic.Hidden - hiddenCount));
-                            Console.WriteLine("Again");
-                            hiddenCount = Statistic.Hidden;
-                            webNavigator.RefrashPage();
+                            ProcessGiveaway(steamGiftPage, giveaway);
+                            processedGiveaways.Add(giveaway.GetGiveawayUrl());
+                        }
+                        catch (Exception ex)
+                        {
+                            Statistic.Failed++;
+                            CombinedLogger.LogError("Ошибка во время обработки игры", ex);
+                        }
+                    }
+                    if (hiddenCount < Statistic.Hidden)
+                    {
+                        Console.WriteLine("Refrash per page " + (Statistic.Hidden - hiddenCount));
+                        Console.WriteLine("Again");
+                        hiddenCount = Statistic.Hidden;
+                        steamGiftPage.RefrashPage();
+                        continue;
+                    }
+                    else
+                    {
+                        if (steamGiftPage.IsNextPageAvailable())
+                        {
+                            steamGiftPage.GoToNextPage();
                             continue;
                         }
                         else
-                        {
-                            if (giveListPage.CanNavigateNextPage())
-                            {
-                                giveListPage = webNavigator.GetNextGiveawayListPage();
-                                continue;
-                            }
-                            else
-                                return;
-                        }
+                            return;
                     }
-                    while (true);
                 }
+                while (true);
             }
             catch (Exception ex)
             {
@@ -130,6 +134,7 @@ namespace Giveaway.SteamGifts.Commands
             }
             finally
             {
+                webDriver.Quit();
                 Logger.Info(LogFormatter.FormatForLog(Statistic));
                 if (!Headless)
                 {
@@ -140,16 +145,16 @@ namespace Giveaway.SteamGifts.Commands
             }
         }
 
-        public void ProcessGiveaway(GiveawayElement giveaway, PageNavigator webNavigator)
+        public void ProcessGiveaway(SteamGiftPage steamGiftPage, GiveawayElement giveawayElement)
         {
-            bool enoughtPoints = Points > giveaway.GetPoints();
+            bool enoughtPoints = Points > giveawayElement.GetPoints();
             if (!enoughtPoints && Configuration.StopAfterPointsEnded)
             {
                 return;
             }
 
-            var gameStatistic = giveaway.IsCollection() ? new SteamGameInfo() : SteamClient.GetGameInfo(giveaway.GetApplicationId());
-            var gameGiveavay = new GameGiveaway(giveaway, gameStatistic);
+            var gameStatistic = giveawayElement.IsCollection() ? new SteamGameInfo() : SteamClient.GetGameInfo(giveawayElement.GetApplicationId());
+            var gameGiveavay = new GameGiveaway(giveawayElement, gameStatistic);
 
             BaseFilterHandler[] collectionFilters =
                 [
@@ -159,9 +164,9 @@ namespace Giveaway.SteamGifts.Commands
             if (collectionFilters.All(e => e.Filter(gameGiveavay)))
             {
                 Logger.Trace(LogFormatter.FormatForLog(gameGiveavay, GiveawayAction.TryJoin));
-                if (EnterGiveawayProcess(giveaway, webNavigator))
+                if (steamGiftPage.PerformOpenAndJoinGiveawayPage(giveawayElement))
                 {
-                    Statistic.Entered++;
+                    Statistic.Joined++;
                     Logger.Info(LogFormatter.FormatForLog(gameGiveavay, GiveawayAction.Join));
                     TelegramService.SendMessage(TelegramFormatter.FormatForLog(gameGiveavay, GiveawayAction.Join), TelegramSettings.PreviewJoinedGiveaways);
                 }
@@ -185,9 +190,9 @@ namespace Giveaway.SteamGifts.Commands
             {
                 Logger.Trace(LogFormatter.FormatForLog(gameGiveavay, GiveawayAction.TryJoin));
 
-                if (EnterGiveawayProcess(giveaway, webNavigator))
+                if (steamGiftPage.PerformOpenAndJoinGiveawayPage(giveawayElement))
                 {
-                    Statistic.Entered++;
+                    Statistic.Joined++;
                     Logger.Info(LogFormatter.FormatForLog(gameGiveavay, GiveawayAction.Join));
                     TelegramService.SendMessage(TelegramFormatter.FormatForLog(gameGiveavay, GiveawayAction.Join), TelegramSettings.PreviewJoinedGiveaways);
                 }
@@ -209,7 +214,7 @@ namespace Giveaway.SteamGifts.Commands
             if (hideFilters.All(e => e.Filter(gameGiveavay)))
             {
                 Logger.Trace(LogFormatter.FormatForLog(gameGiveavay, GiveawayAction.TryHide));
-                if (OpenPageHideGiveaway(giveaway, webNavigator))
+                if (steamGiftPage.PerformOpenAndHideGiveawayPage(giveawayElement))
                 {
                     Statistic.Hidden++;
                     Logger.Info(LogFormatter.FormatForLog(gameGiveavay, GiveawayAction.Hide));
@@ -227,84 +232,6 @@ namespace Giveaway.SteamGifts.Commands
 
             Logger.Trace(LogFormatter.FormatForLog(gameGiveavay, GiveawayAction.Skip));
             Statistic.Skiped++;
-        }
-
-        public bool EnterGiveawayProcess(GiveawayElement giveaway, PageNavigator webNavigator)
-        {
-            int tryCount = 2;
-            do
-            {
-                var success = OpenPageEnterGiveaway(giveaway, webNavigator);
-
-                if (success)
-                {
-                    Points -= giveaway.GetPoints();
-                    Statistic.Entered++;
-                    return true;
-                }
-                else if (!success && tryCount == 0)
-                {
-                    Statistic.Failed++;
-                    RandomWaiter.WaitSeconds(5, 10);
-                }
-                else
-                {
-                    Logger.Warn("Не удалось вступить в раздачу");
-                    Logger.Warn($"Осталовь попыток {tryCount}");
-                }
-                tryCount--;
-            }
-            while (tryCount > 0);
-            return false;
-        }
-
-        public bool OpenPageEnterGiveaway(GiveawayElement giveaway, PageNavigator webNavigator)
-        {
-            bool result = false;
-            giveaway.Focus();
-            var currentWindowName = webNavigator.Driver.WindowHandles.First();
-            try
-            {
-                using (var giveawayPage = webNavigator.GetGiveawayPage(giveaway.GetGiveawayUrl()))
-                {
-                    result = giveawayPage.PerformEnter();
-                    //RandomWaiter.WaitSeconds(2, 5);
-                    //giveawayPage.Enter();
-                    //RandomWaiter.WaitSeconds(2, 3);
-                    //result = giveawayPage.IsEntered();
-                }
-            }
-            finally
-            {
-                webNavigator.Driver.SwitchTo().Window(currentWindowName);
-            }
-            return result;
-        }
-
-        public bool OpenPageHideGiveaway(GiveawayElement giveaway, PageNavigator webNavigator)
-        {
-            bool result = false;
-            giveaway.Focus();
-            var currentWindowName = webNavigator.Driver.WindowHandles.First();
-            try
-            {
-                using (var giveawayPage = webNavigator.GetGiveawayPage(giveaway.GetGiveawayUrl()))
-                {
-                    RandomWaiter.WaitSeconds(3, 5);
-                    if (giveawayPage.IsHidden())
-                        return true;
-                    giveawayPage.ClickHideButton();
-                    RandomWaiter.WaitSeconds(2, 3);
-                    giveawayPage.ClickConfirmButton();
-                    RandomWaiter.WaitSeconds(2, 3);
-                    result = giveawayPage.IsHidden();
-                }
-            }
-            finally
-            {
-                webNavigator.Driver.SwitchTo().Window(currentWindowName);
-            }
-            return result;
         }
     }
 }

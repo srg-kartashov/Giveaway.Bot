@@ -12,7 +12,6 @@ namespace Giveaway.SteamGifts.Pages.SteamGift
         private By DeleteButtonSelector => By.CssSelector("form div[data-do='entry_delete'].sidebar__entry-delete");
         private By EnterButtonSelector => By.CssSelector("form div[data-do='entry_insert'].sidebar__entry-insert");
         private By HideButtonSelector => By.CssSelector("div.featured__heading i.featured__giveaway__hide");
-        private By HidePopupSelector => By.CssSelector("body div.popup popup--hide-games");
 
         public GiveawayPage(IWebDriver driver, string url) : base(driver)
         {
@@ -24,29 +23,44 @@ namespace Giveaway.SteamGifts.Pages.SteamGift
                 .GoToUrl(Url);
         }
 
-        public void ClickConfirmButton()
+        public void Dispose()
         {
-            var hidePopup = Driver.FindElements(HidePopupSelector).FirstOrDefault();
+            Driver.Close();
+        }
+
+        public bool PerformEnter()
+        {
+            WebDriverWait wait = new WebDriverWait(Driver, TimeSpan.FromSeconds(10));
+            RandomWaiter.WaitSeconds(1, 3);
+            ClickEnterButton();
+            wait.Until(e => IsEntered());
+            RandomWaiter.WaitSeconds(1, 3);
+            return IsEntered();
+        }
+
+        public bool PerformHide()
+        {
+            WebDriverWait wait = new WebDriverWait(Driver, TimeSpan.FromSeconds(10));
+            if (IsHidden())
+                return true;
+            ClickHideButton();
+            wait.Until(e => IsConfirmButtonVisible());
+            RandomWaiter.WaitSeconds(1, 3);
+            ClickConfirmButton();
+            wait.Until(e => IsHidden());
+            RandomWaiter.WaitSeconds(1, 3);
+            return IsHidden();
+        }
+
+        private void ClickConfirmButton()
+        {
             var confirmHideButton = Driver.FindElements(ConfirmHideButtonSelector).FirstOrDefault();
             Actions actions = new Actions(Driver);
             actions.Click(confirmHideButton);
             actions.Perform();
         }
 
-        public void ClickHideButton()
-        {
-            var hideButton = Driver.FindElements(HideButtonSelector).FirstOrDefault();
-            Actions actions = new Actions(Driver);
-            actions.Click(hideButton);
-            actions.Perform();
-        }
-
-        public void Dispose()
-        {
-            Driver.Close();
-        }
-
-        public void Enter()
+        private void ClickEnterButton()
         {
             var enterButton = Driver.FindElements(EnterButtonSelector).FirstOrDefault();
             Actions actions = new Actions(Driver);
@@ -54,40 +68,31 @@ namespace Giveaway.SteamGifts.Pages.SteamGift
             actions.Perform();
         }
 
-        public bool IsEntered()
+        private void ClickHideButton()
+        {
+            var hideButton = Driver.FindElements(HideButtonSelector).FirstOrDefault();
+            Actions actions = new Actions(Driver);
+            actions.Click(hideButton);
+            actions.Perform();
+        }
+
+        private bool IsConfirmButtonVisible()
+        {
+            var confirmButton = Driver.FindElements(ConfirmHideButtonSelector).FirstOrDefault();
+            return confirmButton != null;
+        }
+
+        private bool IsEntered()
         {
             var enterButton = Driver.FindElements(DeleteButtonSelector).First();
             var hidden = enterButton.GetAttribute("class").Contains("is-hidden");
             return !hidden;
         }
 
-        public bool IsHidden()
+        private bool IsHidden()
         {
             var hideButton = Driver.FindElements(HideButtonSelector).FirstOrDefault();
             return hideButton == null;
-        }
-
-        //public bool IsConfirmHideButtonVisible()
-        //{
-        //}
-        public bool PerformEnter()
-        {
-            Enter();
-            WebDriverWait wait = new WebDriverWait(Driver, TimeSpan.FromSeconds(10));
-            wait.Until(e => IsEntered());
-            return IsEntered();
-        }
-
-        public bool PerformHide()
-        {
-            if (IsHidden())
-                return true;
-            ClickHideButton();
-            WebDriverWait wait = new WebDriverWait(Driver, TimeSpan.FromSeconds(10));
-            //wait.Until(ExpectedConditions)
-            ClickConfirmButton();
-
-            return IsHidden();
         }
     }
 }

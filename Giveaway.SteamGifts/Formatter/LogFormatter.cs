@@ -8,7 +8,7 @@ namespace Giveaway.SteamGifts.Formatter
     {
         public string FormatForLog(Statistic statistic)
         {
-            return $"Успешно вступили: {statistic.Entered}, Не получилось вступить: {statistic.Failed}, Забраковали по фильтрам: {statistic.Skiped}, Скрыли: {statistic.Hidden}, Не удалось скрыть: {statistic.FailedHidden}";
+            return $"Успешно вступили: {statistic.Joined}, Не получилось вступить: {statistic.Failed}, Забраковали по фильтрам: {statistic.Skiped}, Скрыли: {statistic.Hidden}, Не удалось скрыть: {statistic.FailedHidden}";
         }
 
         public string FormatForLog(UserData userData)
