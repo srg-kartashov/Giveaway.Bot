@@ -11,7 +11,7 @@ namespace Giveaway.SteamGifts.Filters
             UserBalance = userBalance;
         }
 
-        public override bool Filter(GameGiveaway game)
+        public override bool Filter(GiveawayData game)
         {
             return UserBalance > game.Points;
         }

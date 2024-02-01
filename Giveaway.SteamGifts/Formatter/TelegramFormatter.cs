@@ -21,7 +21,7 @@ namespace Giveaway.SteamGifts.Formatter
             return $"🛑 {massage}\n <pre>{exception.StackTrace?.Trim()}</pre>";
         }
 
-        public string FormatForLog(GameGiveaway game, GiveawayAction action)
+        public string FormatForLog(GiveawayData giveawayData, GiveawayAction action)
         {
             StringBuilder telegramMessage = new StringBuilder();
             switch (action)
@@ -43,9 +43,9 @@ namespace Giveaway.SteamGifts.Formatter
                     break;
             }
 
-            telegramMessage.Append($" <a href =\"{game.SteamUrl}\">{game.Name}</a>");
-            telegramMessage.Append($" [{game.Reviews} - {game.Raiting}%] ");
-            telegramMessage.Append($" <a href =\"{game.GiveawayGiftUrl}\">🌐</a>");
+            telegramMessage.Append($" <a href =\"{giveawayData.SteamUrl}\">{giveawayData.Name}</a>");
+            telegramMessage.Append($" [{giveawayData.Reviews} - {giveawayData.Raiting}%] ");
+            telegramMessage.Append($" <a href =\"{giveawayData.GiveawayGiftUrl}\">🌐</a>");
             return telegramMessage.ToString();
         }
     }

@@ -22,7 +22,7 @@ namespace Giveaway.SteamGifts.Services
         public void LogError(string message, Exception ex)
         {
             Logger.Error(ex, message);
-            TelegramService.SendMessage("🛑 " + message + "\n" + ex.Message + "\n" + "<span class=\"tg-spoiler\">" + ex.StackTrace + "</span>");
+            TelegramService.SendMessage("🛑 " + message + "\n" + ex.Message + "\n" + "<pre>" + ex.StackTrace + "</pre>");
         }
 
         public void LogWarning(string message)

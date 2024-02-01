@@ -3,9 +3,9 @@ using Giveaway.SteamGifts.Pages.SteamGift.Elements;
 
 namespace Giveaway.SteamGifts.Models
 {
-    internal class GameGiveaway
+    internal class GiveawayData
     {
-        public GameGiveaway(GiveawayElement giveaway)
+        public GiveawayData(GiveawayElement giveaway)
         {
             Name = giveaway.GetGameName();
             SteamUrl = giveaway.GetSteamUrl();
@@ -14,7 +14,7 @@ namespace Giveaway.SteamGifts.Models
             Points = giveaway.GetPoints();
         }
 
-        public GameGiveaway(GiveawayElement giveaway, SteamGameInfo steamGameInfo) : this(giveaway)
+        public GiveawayData(GiveawayElement giveaway, SteamGameInfo steamGameInfo) : this(giveaway)
         {
             Raiting = steamGameInfo.Raiting;
             Reviews = steamGameInfo.TotalReviews;

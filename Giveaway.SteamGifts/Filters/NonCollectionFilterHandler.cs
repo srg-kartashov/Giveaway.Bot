@@ -8,7 +8,7 @@ namespace Giveaway.SteamGifts.Filters
         {
         }
 
-        public override bool Filter(GameGiveaway game)
+        public override bool Filter(GiveawayData game)
         {
             return !game.IsCollection;
         }

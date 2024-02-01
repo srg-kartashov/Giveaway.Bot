@@ -11,7 +11,7 @@ namespace Giveaway.SteamGifts.Filters
             FilterSettings = filterSettings;
         }
 
-        public override bool Filter(GameGiveaway game)
+        public override bool Filter(GiveawayData game)
         {
             foreach (var filterSetting in FilterSettings)
             {

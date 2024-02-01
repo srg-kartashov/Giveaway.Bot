@@ -4,6 +4,6 @@ namespace Giveaway.SteamGifts.Filters
 {
     internal abstract class BaseFilterHandler
     {
-        public abstract bool Filter(GameGiveaway game);
+        public abstract bool Filter(GiveawayData game);
     }
 }

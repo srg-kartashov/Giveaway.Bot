@@ -16,15 +16,15 @@ namespace Giveaway.SteamGifts.Formatter
             return "Имя пользователя: " + userData.Name + " Уровень: " + userData.Level + " Баланс: " + userData.Points;
         }
 
-        public string FormatForLog(GameGiveaway game, GiveawayAction action)
+        public string FormatForLog(GiveawayData giveawayData, GiveawayAction action)
         {
             StringBuilder loggerMessage = new StringBuilder();
-            loggerMessage.Append($"[{game.Reviews} - {game.Raiting}%]".PadRight(16));
-            loggerMessage.Append($"Name: {game.Name}; ");
-            loggerMessage.Append($"Points: {game.Points}; ");
+            loggerMessage.Append($"[{giveawayData.Reviews} - {giveawayData.Raiting}%]".PadRight(16));
+            loggerMessage.Append($"Name: {giveawayData.Name}; ");
+            loggerMessage.Append($"Points: {giveawayData.Points}; ");
             loggerMessage.Append($"Action: ");
             loggerMessage.Append(Enum.GetName(typeof(GiveawayAction), action));
-            if (game.IsCollection) loggerMessage.Append(" IsCollection;");
+            if (giveawayData.IsCollection) loggerMessage.Append(" IsCollection;");
             return loggerMessage.ToString();
         }
     }
