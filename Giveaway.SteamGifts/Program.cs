@@ -131,7 +131,7 @@ namespace Giveaway.SteamGifts
         public static void WriteLogo(string title)
         {
             StringBuilder headerBuilder = new StringBuilder();
-            var logo = File.ReadAllText("Images\\logo.txt");
+            var logo = File.ReadAllText(Path.Combine("Images", "logo.txt"));
             headerBuilder.AppendLine(logo);
             headerBuilder.AppendLine();
             headerBuilder.AppendLine(title);
