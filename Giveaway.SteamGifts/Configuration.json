@@ -1,5 +1,6 @@
 {
   "DriverProfilePath": "UserProfile",
+  "ChromeDriverDirectory": "/usr/lib/chromium-browser",
   "Telegram": {
     "BotToken": "",
     "ChatId": "",

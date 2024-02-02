@@ -29,10 +29,17 @@ namespace Giveaway.SteamGifts.Pages
                     options.AddArgument("--window-size=1920,1080");
                 }
 
-                ChromeDriverService service = ChromeDriverService.CreateDefaultService();
-                service.HideCommandPromptWindow = true;
+                if (string.IsNullOrEmpty(DriverPath))
+                {
+                    ChromeDriverService service = ChromeDriverService.CreateDefaultService();
+                    service.HideCommandPromptWindow = true;
 
-                return new ChromeDriver(service, options);
+                    return new ChromeDriver(service, options);
+                }
+                else
+                {
+                    return new ChromeDriver(DriverPath, options);
+                }
             }
             catch (Exception ex)
             {
