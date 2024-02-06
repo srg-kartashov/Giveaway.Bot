@@ -20,24 +20,25 @@ namespace Giveaway.SteamGifts
 
         private static void Main(string[] args)
         {
-            ConfigureConsole();
             bool isHeadless = IsHeadless(args);
+            bool isAuto = IsAuto(args);
             try
             {
                 Configuration Configuration = LoadConfiguration();
-                if (isHeadless)
+                if (isHeadless || isAuto)
                 {
-                    new StartCommand(Configuration, false).Execute();
+                    new StartCommand(Configuration, isHeadless, isAuto).Execute();
                 }
                 else
                 {
+                    ConfigureConsole();
                     ShowConsoleMenu(args, Configuration);
                 }
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, ex.Message);
-                if (!isHeadless)
+                if (!isHeadless || !isAuto)
                 {
                     Console.WriteLine("Press any key to close application...");
                     Console.ReadLine();
@@ -113,6 +114,11 @@ namespace Giveaway.SteamGifts
         public static bool IsHeadless(string[] args)
         {
             return args.Contains("-headless");
+        }
+
+        public static bool IsAuto(string[] args)
+        {
+            return args.Contains("-auto");
         }
 
         public static void ConfigureConsole()

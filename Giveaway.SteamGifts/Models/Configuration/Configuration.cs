@@ -7,6 +7,9 @@ namespace Giveaway.SteamGifts.Models
         [JsonProperty(Required = Required.Always)]
         public bool StopAfterPointsEnded { get; set; }
 
+        public int StartingDelayInMinutesFrom { get; set; } = 0;
+        public int StartingDelayInMinutesTo { get; set; } = 0;
+
         [JsonProperty(Required = Required.Always)]
         public string DriverProfilePath { get; set; } = null!;
 
@@ -21,5 +24,7 @@ namespace Giveaway.SteamGifts.Models
 
         [JsonProperty(Required = Required.Always)]
         public FilterSettings[] HideFilters { get; set; } = null!;
+
+        public string ChromeDriverDirectory { get; set; } = string.Empty;
     }
 }

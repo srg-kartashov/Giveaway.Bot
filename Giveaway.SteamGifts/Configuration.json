@@ -1,6 +1,8 @@
 {
   "DriverProfilePath": "UserProfile",
   "ChromeDriverDirectory": "/usr/lib/chromium-browser",
+  "StartingDelayInMinutesFrom": 0,
+  "StartingDelayInMinutesTo": 0,
   "Telegram": {
     "BotToken": "",
     "ChatId": "",

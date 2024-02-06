@@ -106,7 +106,6 @@ namespace Giveaway.SteamGifts.Pages.SteamGift
 
         public bool IsAuthorized()
         {
-            var data = Driver.WindowHandles;
             var userName = Driver.FindElements(UserName).FirstOrDefault();
             return userName != null && Driver.Url.Contains("https://www.steamgifts.com/");
         }

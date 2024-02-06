@@ -18,6 +18,7 @@ namespace Giveaway.SteamGifts.Commands
     {
         public CombinedLogger CombinedLogger { get; }
         public bool Headless { get; set; }
+        public bool IsAuto { get; }
         public LogFormatter LogFormatter { get; set; }
         public int Points { get; set; }
         public RandomWaiter RandomWaiter { get; set; }
@@ -30,7 +31,7 @@ namespace Giveaway.SteamGifts.Commands
         private TelegramService TelegramService { get; }
         private TelegramSettings TelegramSettings { get; }
 
-        public StartCommand(Configuration configuration, bool headlessMode = false) : base(configuration)
+        public StartCommand(Configuration configuration, bool headlessMode = false, bool isAuto = false) : base(configuration)
         {
             TelegramService = new TelegramService(configuration.Telegram.BotToken, configuration.Telegram.ChatId);
             HideFilters = configuration.HideFilters;
@@ -40,6 +41,7 @@ namespace Giveaway.SteamGifts.Commands
             RandomWaiter = new RandomWaiter();
             CombinedLogger = new CombinedLogger(Logger, TelegramService);
             Headless = headlessMode;
+            IsAuto = isAuto;
             Statistic = new Statistic();
             LogFormatter = new LogFormatter();
             TelegramFormatter = new TelegramFormatter();
@@ -50,9 +52,17 @@ namespace Giveaway.SteamGifts.Commands
             IWebDriver webDriver = null!;
             try
             {
+                if (Configuration.StartingDelayInMinutesFrom != 0 && Configuration.StartingDelayInMinutesTo != 0)
+                {
+                    var waitBeforeStart = new Random().Next(Configuration.StartingDelayInMinutesFrom, Configuration.StartingDelayInMinutesTo);
+                    CombinedLogger.LogInfo("Ожидаем перед запуском " + waitBeforeStart);
+                    Thread.Sleep(waitBeforeStart * 1000 * 60);
+                }
+
                 webDriver = new SeleniumDriverBuilder()
                    .SetUserDataPath(Configuration.DriverProfilePath)
                    .SetHeadless(Headless)
+                   .SetDriverPath(Configuration.ChromeDriverDirectory)
                    .Build();
 
                 CombinedLogger.LogInfo("Начинаю работу");
@@ -137,7 +147,7 @@ namespace Giveaway.SteamGifts.Commands
                 webDriver.Quit();
                 Logger.Info(LogFormatter.FormatForLog(Statistic));
                 TelegramService.SendMessage(TelegramFormatter.FormatForLog(Statistic));
-                if (!Headless)
+                if (!Headless && !IsAuto)
                 {
                     Console.WriteLine("Press any key to continue...");
                     Console.ReadLine();

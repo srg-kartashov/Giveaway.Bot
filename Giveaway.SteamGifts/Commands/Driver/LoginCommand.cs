@@ -24,9 +24,11 @@ namespace Giveaway.SteamGifts.Commands
                 webDriver = new SeleniumDriverBuilder()
                   .SetUserDataPath(Configuration.DriverProfilePath)
                   .SetHeadless(false)
+                  .SetDriverPath(Configuration.ChromeDriverDirectory)
                   .Build();
                 var steamGiftPage = new SteamGiftPage(webDriver);
                 steamGiftPage.GoToPage(1);
+                Thread.Sleep(20000);
                 while (!steamGiftPage.IsAuthorized())
                 {
                     Console.WriteLine("Вы не авторизиваны. Войдите пожалуйста в аккаунт");
