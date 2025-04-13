@@ -60,7 +60,9 @@ namespace Giveaway.SteamGifts.Pages.SteamGift.Elements
             var steamUrl = GetSteamUrl();
             string[] patterns = [
                 @"store.steampowered.com\/app\/(\d+)\/",
-                @"store.steampowered.com\/sub\/(\d+)\/"
+                @"store.steampowered.com\/app\/(\d+)?",
+                @"store.steampowered.com\/sub\/(\d+)\/",
+                @"store.steampowered.com\/sub\/(\d+)?",
             ];
             foreach (var pattern in patterns)
             {
